@@ -1,4 +1,4 @@
-﻿from io import StringIO, BytesIO
+from io import StringIO, BytesIO
 import csv
 
 from reportlab.lib.pagesizes import letter

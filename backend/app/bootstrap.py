@@ -1,4 +1,4 @@
-﻿from app.core.database import SessionLocal
+from app.core.database import SessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
 

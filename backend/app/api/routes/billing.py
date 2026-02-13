@@ -1,4 +1,4 @@
-﻿import stripe
+import stripe
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy.orm import Session
 

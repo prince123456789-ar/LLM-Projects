@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 import enum
 
 from sqlalchemy import Boolean, DateTime, Enum, Integer, String

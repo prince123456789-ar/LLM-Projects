@@ -1,4 +1,4 @@
-﻿import hashlib
+import hashlib
 from app.models.lead import Lead
 
 

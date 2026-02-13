@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
 from app.models.lead import LeadChannel, LeadStatus

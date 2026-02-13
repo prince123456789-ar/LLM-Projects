@@ -1,4 +1,4 @@
-﻿param(
+param(
   [Parameter(Mandatory = $true)]
   [string]$RenderApiKey,
   [string]$BackendServiceName = "real-estate-ai-backend",

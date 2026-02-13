@@ -1,4 +1,4 @@
-﻿from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session
 
 from app.models.user import User, UserRole
 from app.models.lead import Lead, LeadStatus

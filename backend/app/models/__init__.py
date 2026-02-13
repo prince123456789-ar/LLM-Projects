@@ -1,4 +1,4 @@
-﻿from app.models.user import User, UserRole
+from app.models.user import User, UserRole
 from app.models.lead import Lead, LeadChannel, LeadStatus
 from app.models.property import Property
 from app.models.integration import ChannelIntegration, CalendarIntegration, IntegrationStatus

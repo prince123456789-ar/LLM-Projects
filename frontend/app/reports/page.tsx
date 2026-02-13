@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { createScheduledReport, downloadReport, listScheduledReports, sendScheduledReportNow } from "@/lib/api";

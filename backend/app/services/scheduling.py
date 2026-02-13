@@ -1,4 +1,4 @@
-﻿from datetime import timedelta
+from datetime import timedelta
 
 
 def suggest_next_slots(start_hour: int = 9, count: int = 3, slot_minutes: int = 30):

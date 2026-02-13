@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter
+from fastapi import APIRouter
 
 from app.api.routes import analytics, appointments, auth, billing, integrations, leads, properties, reports
 

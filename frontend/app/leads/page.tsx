@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { createLead, fetchLeads, Lead } from "@/lib/api";

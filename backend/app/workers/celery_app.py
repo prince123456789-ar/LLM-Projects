@@ -1,4 +1,4 @@
-﻿from celery import Celery
+from celery import Celery
 
 from app.core.config import get_settings
 

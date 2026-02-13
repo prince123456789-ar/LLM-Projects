@@ -1,4 +1,4 @@
-﻿databases:
+databases:
   - name: real-estate-ai-db
     databaseName: real_estate_ai
     plan: free
