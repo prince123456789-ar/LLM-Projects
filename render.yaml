@@ -1,14 +1,19 @@
 ﻿databases:
   - name: real-estate-ai-db
     databaseName: real_estate_ai
-    user: postgres
     plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow connections from Render services
 
 services:
   - type: redis
     name: real-estate-ai-redis
     plan: free
     maxmemoryPolicy: noeviction
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow connections from Render services
 
   - type: web
     name: real-estate-ai-backend
