@@ -1,0 +1,71 @@
+﻿from functools import lru_cache
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+
+    PROJECT_NAME: str = "RealEstateAI"
+    ENVIRONMENT: str = "development"
+    API_V1_STR: str = "/api/v1"
+
+    SECRET_KEY: str = "change_me"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 14
+    JWT_ALGORITHM: str = "HS512"
+    JWT_ISSUER: str = "realestate-ai"
+    JWT_AUDIENCE: str = "realestate-ai-api"
+
+    DATABASE_URL: str = ""
+    POSTGRES_SERVER: str = "db"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "real_estate_ai"
+
+    REDIS_URL: str = "redis://redis:6379/0"
+    CELERY_BROKER_URL: str = "redis://redis:6379/1"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"
+
+    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["localhost", "127.0.0.1"])
+
+    WEBHOOK_SHARED_SECRET: str = ""
+    WEBHOOK_MAX_SKEW_SECONDS: int = 300
+
+    META_VERIFY_TOKEN: str = ""
+    META_APP_SECRET: str = ""
+
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "no-reply@realestate-ai.local"
+
+    LOGIN_MAX_ATTEMPTS: int = 5
+    LOGIN_LOCK_MINUTES: int = 15
+
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_ID: str = ""
+    STRIPE_SUCCESS_URL: str = "http://localhost:3000/billing/success"
+    STRIPE_CANCEL_URL: str = "http://localhost:3000/billing/cancel"
+
+    # Crypto-agility switch to rotate algorithms/keys without code change.
+    ZERO_TRUST_SIGNING_ALG: str = "HS512"
+
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> str:
+        if self.DATABASE_URL:
+            return self.DATABASE_URL
+        return (
+            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()

@@ -1,0 +1,59 @@
+﻿from datetime import datetime, timezone
+
+from fastapi import Depends, Header, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.security import decode_token
+from app.models.user import User, UserRole
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    x_device_id: str | None = Header(default=None),
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+    )
+    try:
+        payload = decode_token(token)
+        if payload.get("typ") != "access":
+            raise credentials_exception
+
+        user_id = payload.get("sub")
+        token_device_id = payload.get("did")
+        token_session_version = payload.get("sv")
+
+        if not user_id or not token_device_id or token_session_version is None:
+            raise credentials_exception
+        if not x_device_id or x_device_id != token_device_id:
+            raise HTTPException(status_code=401, detail="Device verification failed")
+    except JWTError:
+        raise credentials_exception
+
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user:
+        raise credentials_exception
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="User inactive")
+    if user.session_version != int(token_session_version):
+        raise HTTPException(status_code=401, detail="Session revoked")
+    if user.locked_until and user.locked_until > datetime.now(timezone.utc).replace(tzinfo=None):
+        raise HTTPException(status_code=423, detail="Account locked")
+
+    return user
+
+
+def require_roles(*roles: UserRole):
+    def role_dependency(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in roles:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
+        return current_user
+
+    return role_dependency
