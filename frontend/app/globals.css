@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #f4f6f8;
   --panel: #ffffff;
   --text: #0f172a;
@@ -67,4 +67,53 @@ button {
 .small {
   color: var(--muted);
   font-size: 13px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+}
+
+.topbar-inner {
+  min-height: 64px;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.nav-links a {
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.nav-links a:hover {
+  border-color: var(--border);
+  background: #f8fafc;
+}
+
+.site-footer {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  padding: 12px 0;
+}
+
+.cards-3 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.hero h1 {
+  margin: 0 0 10px;
+}
+
+.legal h3 {
+  margin: 8px 0 4px;
 }

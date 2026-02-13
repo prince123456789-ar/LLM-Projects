@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*.onrender.com", "localhost", "127.0.0.1"])
+    FRONTEND_URL: str = "http://localhost:3000"
 
     WEBHOOK_SHARED_SECRET: str = ""
     WEBHOOK_MAX_SKEW_SECONDS: int = 300
