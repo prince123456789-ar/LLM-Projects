@@ -1,37 +1,10 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="container grid">
-      <section className="card hero">
-        <h1>Real Estate AI SaaS</h1>
-        <p className="small">
-          Automate lead intake across channels, score and route leads with AI, schedule appointments, and track conversion in one place.
-        </p>
-
-        <div className="row" style={{ gap: "10px", flexWrap: "wrap" }}>
-          <Link href="/login"><button>Get Started</button></Link>
-          <Link href="/dashboard"><button>Open Dashboard</button></Link>
-        </div>
-      </section>
-
-      <section className="grid cards-3">
-        <div className="card">
-          <h3>Lead Intelligence</h3>
-          <p className="small">Capture, dedupe, score, and assign leads automatically.</p>
-          <Link href="/leads" className="small">Open Leads →</Link>
-        </div>
-        <div className="card">
-          <h3>Integrations</h3>
-          <p className="small">Connect WhatsApp, Instagram, Facebook, email, and calendars.</p>
-          <Link href="/integrations" className="small">Open Integrations →</Link>
-        </div>
-        <div className="card">
-          <h3>Operations</h3>
-          <p className="small">Appointments, reports, and analytics for teams and managers.</p>
-          <Link href="/reports" className="small">Open Reports →</Link>
-        </div>
-      </section>
+    <main className="container main-shell">
+      <section className="card hero"><h1>Close More Deals With AI-Powered Real Estate Operations</h1><p className="small">Capture leads from WhatsApp, Instagram, Facebook, and web chat. Score intent, auto-route to agents, and track revenue pipeline in one command center.</p><div className="row" style={{ flexWrap: "wrap" }}><Link href="/login"><button>Start Free Setup</button></Link><Link href="/pricing"><button className="secondary">View Pricing</button></Link><Link href="/dashboard"><button className="secondary">See Dashboard</button></Link></div></section>
+      <section className="grid cards-3"><article className="card"><h3>Lead Intelligence</h3><p className="small">NLP extraction, duplicate merge, lead scoring, and assignment automation.</p><Link href="/leads" className="small">Open Leads</Link></article><article className="card"><h3>Omnichannel Integrations</h3><p className="small">Meta channels, email, and webhook ingestion with security verification.</p><Link href="/integrations" className="small">Open Integrations</Link></article><article className="card"><h3>Team Execution</h3><p className="small">Appointments, reports, and conversion visibility for managers and agents.</p><Link href="/reports" className="small">Open Reports</Link></article></section>
     </main>
   );
 }

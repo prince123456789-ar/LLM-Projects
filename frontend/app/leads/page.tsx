@@ -49,7 +49,7 @@ export default function LeadsPage() {
   }
 
   return (
-    <main className="container grid">
+    <main className="container main-shell">
       <section className="card">
         <h2>New Lead</h2>
         <form className="grid" onSubmit={onCreate}>

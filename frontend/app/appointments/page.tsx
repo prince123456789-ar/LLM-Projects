@@ -46,7 +46,7 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <main className="container grid">
+    <main className="container main-shell">
       <section className="card">
         <h2>Appointment Scheduling</h2>
         <p className="small">Default agent_id=3 matches seeded `agent@agency.com` in this starter.</p>

@@ -1,8 +1,8 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="container">
+    <main className="container main-shell">
       <section className="card">
         <h1>Page Not Found</h1>
         <p className="small">The page you requested does not exist. Use the links below to continue.</p>

@@ -1,6 +1,6 @@
-﻿export default function TermsPage() {
+export default function TermsPage() {
   return (
-    <main className="container grid">
+    <main className="container main-shell">
       <section className="card legal">
         <h1>Terms of Use</h1>
         <p className="small">Last updated: February 13, 2026</p>

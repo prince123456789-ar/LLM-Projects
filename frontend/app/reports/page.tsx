@@ -81,7 +81,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <main className="container grid">
+    <main className="container main-shell">
       <section className="card">
         <h2>Reports Export</h2>
         <p className="small">Protected downloads for managers/admins.</p>

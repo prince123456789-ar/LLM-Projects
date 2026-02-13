@@ -1,6 +1,6 @@
-﻿export default function PrivacyPage() {
+export default function PrivacyPage() {
   return (
-    <main className="container grid">
+    <main className="container main-shell">
       <section className="card legal">
         <h1>Privacy Policy</h1>
         <p className="small">Last updated: February 13, 2026</p>
@@ -33,7 +33,7 @@
         <p className="small">Depending on jurisdiction, you may request access, correction, deletion, export, objection, or restriction. Contact us to submit a rights request.</p>
 
         <h3>10. Children</h3>
-        <p className="small">Our services are not directed to children under applicable age thresholds. We do not knowingly collect children’s data.</p>
+        <p className="small">Our services are not directed to children under applicable age thresholds. We do not knowingly collect childrenÃ¢â‚¬â„¢s data.</p>
 
         <h3>11. Changes</h3>
         <p className="small">We may update this policy periodically. Material updates will be reflected by changing the "Last updated" date and, where required, notifying users.</p>

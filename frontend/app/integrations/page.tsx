@@ -59,7 +59,7 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <main className="container grid">
+    <main className="container main-shell">
       <section className="card">
         <h2>Channel Integrations</h2>
         <p className="small">
