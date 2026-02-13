@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"
 
     BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
-    ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["localhost", "127.0.0.1"])
+    ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*.onrender.com", "localhost", "127.0.0.1"])
 
     WEBHOOK_SHARED_SECRET: str = ""
     WEBHOOK_MAX_SKEW_SECONDS: int = 300
