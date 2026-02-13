@@ -38,7 +38,7 @@ def on_startup() -> None:
 
 @app.get("/health")
 @limiter.limit("60/minute")
-def health(_: Request):
+def health(request: Request):
     return {"status": "ok"}
 
 
