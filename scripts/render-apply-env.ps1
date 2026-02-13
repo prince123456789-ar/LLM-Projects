@@ -4,7 +4,8 @@
   [string]$BackendServiceName = "real-estate-ai-backend",
   [string]$WorkerServiceName = "real-estate-ai-worker",
   [string]$FrontendServiceName = "real-estate-ai-frontend",
-  [string]$EnvFilePath = ".env"
+  [string]$EnvFilePath = ".env",
+  [switch]$ListOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,14 +33,11 @@ function Parse-EnvFile {
 function Get-ServiceByName {
   param(
     [string]$Name,
-    [hashtable]$Headers
+    [array]$Services
   )
 
-  $services = Invoke-RestMethod -Method Get -Uri "https://api.render.com/v1/services?limit=100" -Headers $Headers
-  $service = $services | Where-Object { $_.service.name -eq $Name } | Select-Object -First 1
-  if (-not $service) {
-    throw "Render service not found: $Name"
-  }
+  $service = $Services | Where-Object { $_.service.name -eq $Name } | Select-Object -First 1
+  if (-not $service) { return $null }
   return $service.service
 }
 
@@ -76,10 +74,50 @@ function Apply-EnvSet {
 
 $headers = @{ Authorization = "Bearer $RenderApiKey" }
 $vars = Parse-EnvFile -Path $EnvFilePath
+$services = Invoke-RestMethod -Method Get -Uri "https://api.render.com/v1/services?limit=100" -Headers $headers
 
-$backend = Get-ServiceByName -Name $BackendServiceName -Headers $headers
-$worker = Get-ServiceByName -Name $WorkerServiceName -Headers $headers
-$frontend = Get-ServiceByName -Name $FrontendServiceName -Headers $headers
+if ($ListOnly) {
+  Write-Host "Render services found:"
+  $services | ForEach-Object {
+    $svc = $_.service
+    Write-Host "- $($svc.name) [type=$($svc.type)] [id=$($svc.id)]"
+  }
+  exit 0
+}
+
+$backend = Get-ServiceByName -Name $BackendServiceName -Services $services
+$worker = Get-ServiceByName -Name $WorkerServiceName -Services $services
+$frontend = Get-ServiceByName -Name $FrontendServiceName -Services $services
+
+if (-not $backend) {
+  $backend = ($services | Where-Object {
+      $_.service.type -eq "web_service" -and $_.service.name -match "backend|api"
+    } | Select-Object -First 1).service
+}
+if (-not $worker) {
+  $worker = ($services | Where-Object {
+      $_.service.type -eq "background_worker" -or $_.service.name -match "worker"
+    } | Select-Object -First 1).service
+}
+if (-not $frontend) {
+  $frontend = ($services | Where-Object {
+      $_.service.type -eq "web_service" -and $_.service.name -match "frontend|web|ui"
+    } | Select-Object -First 1).service
+}
+
+if (-not $backend -or -not $worker -or -not $frontend) {
+  Write-Host "Could not auto-resolve all services."
+  Write-Host "Available services:"
+  $services | ForEach-Object {
+    $svc = $_.service
+    Write-Host "- $($svc.name) [type=$($svc.type)]"
+  }
+  throw "Pass explicit -BackendServiceName/-WorkerServiceName/-FrontendServiceName"
+}
+
+Write-Host "Using backend: $($backend.name)"
+Write-Host "Using worker: $($worker.name)"
+Write-Host "Using frontend: $($frontend.name)"
 
 $backendKeys = @(
   "ENVIRONMENT",
