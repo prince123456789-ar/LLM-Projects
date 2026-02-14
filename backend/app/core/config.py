@@ -32,7 +32,16 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"
 
     BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
-    ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*.onrender.com", "localhost", "127.0.0.1"])
+    ALLOWED_HOSTS: list[str] = Field(
+        default_factory=lambda: [
+            "*.onrender.com",
+            "*.ngrok-free.app",
+            "*.ngrok.app",
+            "*.ngrok.io",
+            "localhost",
+            "127.0.0.1",
+        ]
+    )
     FRONTEND_URL: str = "http://localhost:3000"
 
     ENABLE_API_DOCS: bool = False
