@@ -128,6 +128,15 @@ def ui_login():
 def ui_register():
     return _page("app-register.html")
 
+@app.get("/app/forgot-password", include_in_schema=False)
+def ui_forgot_password():
+    return _page("app-forgot-password.html")
+
+
+@app.get("/app/reset-password", include_in_schema=False)
+def ui_reset_password():
+    return _page("app-reset-password.html")
+
 
 @app.get("/app/dashboard", include_in_schema=False)
 def ui_dashboard():

@@ -491,10 +491,80 @@ async function onBillingPage() {
     }
   }
 
+  async function setAutoRenew(enabled) {
+    msg.textContent = "Saving...";
+    try {
+      const res = await apiFetch(`/api/v1/billing/auto-renew?enabled=${enabled ? "true" : "false"}`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Failed to update auto-renew");
+      msg.textContent = "Saved.";
+      await refreshStatus();
+    } catch (err) {
+      msg.textContent = (err && err.message) ? err.message : "Failed to update auto-renew";
+    }
+  }
+
   if (checkoutBtn) checkoutBtn.addEventListener("click", startCheckout);
   if (portalBtn) portalBtn.addEventListener("click", openPortal);
   if (refreshBtn) refreshBtn.addEventListener("click", refreshStatus);
   refreshStatus();
+}
+
+async function onForgotPasswordPage() {
+  const form = document.getElementById("forgotForm");
+  const msg = document.getElementById("forgotMsg");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "Sending...";
+    try {
+      const payload = { email: document.getElementById("fEmail").value };
+      const res = await fetch("/api/v1/password/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Request failed");
+      msg.textContent = "If the email exists, a reset link has been sent.";
+    } catch (err) {
+      msg.textContent = "If the email exists, a reset link has been sent.";
+    }
+  });
+}
+
+async function onResetPasswordPage() {
+  const form = document.getElementById("resetForm");
+  const msg = document.getElementById("resetMsg");
+  const tokenInput = document.getElementById("rToken");
+  if (!form) return;
+
+  try {
+    const url = new URL(window.location.href);
+    const t = url.searchParams.get("token");
+    if (t && tokenInput) tokenInput.value = t;
+  } catch (_) {}
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "Updating...";
+    try {
+      const payload = {
+        token: (document.getElementById("rToken").value || "").trim(),
+        new_password: document.getElementById("rNewPassword").value
+      };
+      const res = await fetch("/api/v1/password/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Reset failed");
+      msg.textContent = "Password updated. You can sign in now.";
+      setTimeout(() => { window.location.href = "/app/login"; }, 900);
+    } catch (err) {
+      msg.textContent = (err && err.message) ? err.message : "Reset failed";
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -507,4 +577,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "audit") onAuditPage();
   if (page === "register") onRegisterPage();
   if (page === "billing") onBillingPage();
+  if (page === "forgot") onForgotPasswordPage();
+  if (page === "reset") onResetPasswordPage();
 });

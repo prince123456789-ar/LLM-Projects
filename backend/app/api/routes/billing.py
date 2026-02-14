@@ -5,9 +5,12 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_roles
-from app.models.billing import BillingSubscription, SubscriptionStatus
+from app.models.billing import BillingSubscription, SubscriptionPlan, SubscriptionStatus
 from app.models.user import User, UserRole
 from app.services.audit import audit_event
+from app.services.plans import PLAN_API_KEY_LIMIT, Feature, PLAN_FEATURES
+from app.models.api_key import ApiKey
+from app.core.security import api_key_hash, generate_api_key
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -85,7 +88,31 @@ def billing_status(
         "plan": sub.plan.value if sub else "starter",
         "status": sub.status.value if sub else "trial",
         "provider_subscription_id": sub.provider_subscription_id if sub else None,
+        "auto_renew_enabled": bool(sub.auto_renew_enabled) if sub else True,
     }
+
+
+@router.post("/auto-renew")
+def set_auto_renew(
+    enabled: bool = Query(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
+):
+    settings = get_settings()
+    if not settings.STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe not configured")
+
+    sub = db.query(BillingSubscription).filter(BillingSubscription.user_id == current_user.id).order_by(BillingSubscription.created_at.desc()).first()
+    if not sub or not sub.provider_subscription_id:
+        raise HTTPException(status_code=400, detail="No subscription found")
+
+    _set_stripe_key()
+    # Stripe: cancel_at_period_end=True means auto-renew disabled.
+    stripe.Subscription.modify(sub.provider_subscription_id, cancel_at_period_end=(not enabled))
+    sub.auto_renew_enabled = 1 if enabled else 0
+    db.commit()
+    audit_event(db, "billing_auto_renew_set", "billing", user_id=current_user.id, details=f"enabled={enabled}")
+    return {"status": "ok", "auto_renew_enabled": enabled}
 
 
 @router.post("/webhook")
@@ -123,6 +150,22 @@ async def stripe_webhook(
 
         user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
         if user:
+            # Determine plan from price id if present.
+            plan = SubscriptionPlan.starter
+            try:
+                items = (obj.get("items") or {}).get("data") or []
+                price = (items[0].get("price") or {}).get("id") if items else None
+            except Exception:
+                price = None
+
+            if price and settings.STRIPE_PRICE_ID_PRO and price == settings.STRIPE_PRICE_ID_PRO:
+                plan = SubscriptionPlan.pro
+            elif price and settings.STRIPE_PRICE_ID_AGENCY and price == settings.STRIPE_PRICE_ID_AGENCY:
+                plan = SubscriptionPlan.agency
+            elif status_raw in {"active", "trialing"}:
+                # Fallback: treat any active subscription as agency if we can't map.
+                plan = SubscriptionPlan.agency
+
             sub = db.query(BillingSubscription).filter(BillingSubscription.provider_subscription_id == sub_id).first()
             if not sub:
                 sub = BillingSubscription(
@@ -130,11 +173,25 @@ async def stripe_webhook(
                     provider_subscription_id=sub_id,
                     provider_customer_id=customer_id,
                     status=mapped_status,
+                    plan=plan,
+                    auto_renew_enabled=0 if obj.get("cancel_at_period_end") else 1,
                 )
                 db.add(sub)
             else:
                 sub.status = mapped_status
+                sub.plan = plan
+                sub.auto_renew_enabled = 0 if obj.get("cancel_at_period_end") else 1
             db.commit()
             audit_event(db, "billing_webhook_sync", "billing", user_id=user.id, details=f"event={event_type}")
+
+            # When payment becomes active, ensure the user has an API key if plan allows it.
+            if mapped_status == SubscriptionStatus.active and plan in PLAN_FEATURES and Feature.api_access in PLAN_FEATURES[plan]:
+                existing_keys = db.query(ApiKey).filter(ApiKey.user_id == user.id, ApiKey.revoked_at.is_(None)).count()
+                limit = PLAN_API_KEY_LIMIT.get(plan, 0)
+                if existing_keys == 0 and limit > 0:
+                    api_key = generate_api_key(get_settings().API_KEY_PREFIX)
+                    prefix = api_key[:12]
+                    db.add(ApiKey(user_id=user.id, prefix=prefix, key_hash=api_key_hash(api_key, get_settings().SECRET_KEY), name="Default"))
+                    db.commit()
 
     return {"status": "ok"}

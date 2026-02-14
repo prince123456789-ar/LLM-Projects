@@ -1,3 +1,3 @@
-from app.api.routes import analytics, appointments, audit, auth, billing, integrations, leads, properties, reports
+from app.api.routes import analytics, api_keys, appointments, audit, auth, billing, integrations, leads, password_reset, properties, reports
 
-__all__ = ["auth", "leads", "properties", "analytics", "integrations", "appointments", "reports", "billing", "audit"]
+__all__ = ["auth", "leads", "properties", "analytics", "integrations", "appointments", "reports", "billing", "audit", "api_keys", "password_reset"]

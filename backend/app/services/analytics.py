@@ -25,8 +25,8 @@ def get_dashboard_metrics(db: Session) -> DashboardMetrics:
     # Simple MRR estimate from subscriptions. Cap plan pricing at $199.
     plan_price = {
         SubscriptionPlan.starter: 0,
+        SubscriptionPlan.agency: 99,
         SubscriptionPlan.pro: 199,
-        SubscriptionPlan.enterprise: 199,
     }
     active_subs = (
         db.query(BillingSubscription.plan, func.count(BillingSubscription.id))
@@ -62,8 +62,8 @@ def get_timeseries(db: Session, days: int = 30) -> list[TimeSeriesPoint]:
 
     plan_price = {
         SubscriptionPlan.starter: 0,
+        SubscriptionPlan.agency: 99,
         SubscriptionPlan.pro: 199,
-        SubscriptionPlan.enterprise: 199,
     }
     active_subs = (
         db.query(BillingSubscription.plan, func.count(BillingSubscription.id))

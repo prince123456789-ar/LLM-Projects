@@ -16,8 +16,8 @@ class SubscriptionStatus(str, enum.Enum):
 
 class SubscriptionPlan(str, enum.Enum):
     starter = "starter"
+    agency = "agency"
     pro = "pro"
-    enterprise = "enterprise"
 
 
 class BillingSubscription(Base):
@@ -29,4 +29,5 @@ class BillingSubscription(Base):
     status: Mapped[SubscriptionStatus] = mapped_column(Enum(SubscriptionStatus), default=SubscriptionStatus.trial, nullable=False)
     provider_subscription_id: Mapped[str | None] = mapped_column(String(120), unique=True)
     provider_customer_id: Mapped[str | None] = mapped_column(String(120))
+    auto_renew_enabled: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)

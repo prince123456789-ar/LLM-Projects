@@ -58,6 +58,12 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "no-reply@realestate-ai.local"
+    SMTP_USE_TLS: bool = True
+
+    PASSWORD_RESET_TOKEN_TTL_MINUTES: int = 30
+
+    # API keys / plans
+    API_KEY_PREFIX: str = "rea_"
 
     LOGIN_MAX_ATTEMPTS: int = 5
     LOGIN_LOCK_MINUTES: int = 15

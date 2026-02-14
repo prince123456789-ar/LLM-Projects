@@ -90,3 +90,13 @@ def verify_webhook_signature(secret: str, timestamp: str, body: bytes, signature
 
 def generate_device_id() -> str:
     return secrets.token_urlsafe(16)
+
+
+def api_key_hash(api_key: str, secret: str) -> str:
+    # Stable HMAC hash for API keys; store only this.
+    return hmac.new(secret.encode("utf-8"), api_key.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def generate_api_key(prefix: str) -> str:
+    # Prefix is helpful for identification; the secret portion is random.
+    return f"{prefix}{secrets.token_urlsafe(32)}"
