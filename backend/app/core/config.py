@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -87,6 +87,16 @@ class Settings(BaseSettings):
 
     # Crypto-agility switch to rotate algorithms/keys without code change.
     ZERO_TRUST_SIGNING_ALG: str = "HS512"
+
+    @model_validator(mode="after")
+    def _prod_guards(self):
+        # Production hardening toggles.
+        if self.ENVIRONMENT.lower() == "production":
+            if self.ENABLE_API_DOCS:
+                raise ValueError("ENABLE_API_DOCS must be false in production")
+            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
+                raise ValueError("SECRET_KEY must be 32+ chars in production")
+        return self
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

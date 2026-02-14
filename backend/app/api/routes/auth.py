@@ -40,6 +40,10 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     if not settings.ALLOW_PUBLIC_SIGNUP:
         raise HTTPException(status_code=403, detail="Public signup is disabled")
 
+    # Least privilege: public signup cannot create admin accounts.
+    if payload.role == UserRole.admin:
+        raise HTTPException(status_code=403, detail="Admin accounts must be created by backend bootstrap")
+
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
