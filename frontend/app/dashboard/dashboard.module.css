@@ -1,0 +1,351 @@
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+}
+
+.header h1 {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    margin: 0 0 0.5rem 0;
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: clamp(0.875rem, 2vw, 1.125rem);
+    margin: 0;
+    opacity: 0.95;
+    line-height: 1.5;
+}
+
+.errorCard {
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 8px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    margin-bottom: 1.5rem;
+}
+
+.errorText {
+    color: #c33;
+    margin: 0;
+    font-size: clamp(0.875rem, 2vw, 1rem);
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    margin-bottom: 2rem;
+}
+
+.metricCard {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.metricCard:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.metricCard h3 {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    color: #666;
+    margin: 0 0 0.75rem 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metricValue {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    font-weight: 700;
+    color: #667eea;
+    margin: 0;
+    word-break: break-word;
+}
+
+.dataGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    margin-bottom: 2rem;
+}
+
+.dataCard {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.dataCard h3 {
+    font-size: clamp(1rem, 3vw, 1.25rem);
+    color: #333;
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+}
+
+.dataContent {
+    overflow-x: auto;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: clamp(0.75rem, 2vw, 1rem);
+}
+
+.dataContent pre {
+    margin: 0;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    color: #333;
+    font-family: "Courier New", monospace;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.embedCard {
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: clamp(1.5rem, 5vw, 2.5rem);
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+}
+
+.embedCard h2 {
+    font-size: clamp(1.25rem, 4vw, 1.75rem);
+    color: #333;
+    margin: 0 0 0.75rem 0;
+    font-weight: 700;
+}
+
+.embedDescription {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+    color: #666;
+    margin: 0 0 1.5rem 0;
+    line-height: 1.6;
+}
+
+.embedBox {
+    background: #f0f4ff;
+    border: 1px solid #d1d5f7;
+    border-radius: 6px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    margin-bottom: 1.5rem;
+}
+
+.embedUrl {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+}
+
+@media (min-width: 640px) {
+    .embedUrl {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.codeText {
+    font-family: "Courier New", monospace;
+    font-size: clamp(0.65rem, 1.5vw, 0.825rem);
+    color: #555;
+    background: white;
+    padding: clamp(0.5rem, 2vw, 0.75rem);
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    word-break: break-all;
+    white-space: normal;
+    line-height: 1.6;
+    flex: 1;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.copyButton {
+    padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.copyButton:hover {
+    background: #5568d3;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.copyButton:active {
+    transform: scale(0.98);
+}
+
+.scriptPreview {
+    background: #1a1a1a;
+    border-radius: 6px;
+    padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.scriptLabel {
+    color: #999;
+    font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+    margin: 0 0 0.75rem 0;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.codeBlock {
+    background: #2d2d2d;
+    border-radius: 4px;
+    padding: clamp(0.75rem, 2vw, 1rem);
+    overflow-x: auto;
+}
+
+.codeBlock code {
+    font-family: "Courier New", monospace;
+    font-size: clamp(0.65rem, 1.5vw, 0.825rem);
+    color: #a3e635;
+    word-break: break-all;
+    white-space: normal;
+    line-height: 1.8;
+    display: block;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    .container {
+        padding: 0.75rem;
+    }
+
+    .header {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .header h1 {
+        margin-bottom: 0.25rem;
+    }
+
+    .metricsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .dataGrid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .embedCard {
+        padding: 1rem;
+    }
+
+    .embedUrl {
+        gap: 0.5rem;
+    }
+
+    .codeText {
+        min-height: 60px;
+        padding: 0.5rem;
+    }
+
+    .copyButton {
+        min-width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 0.5rem;
+    }
+
+    .header {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .metricsGrid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .metricCard {
+        padding: 0.75rem;
+    }
+
+    .embedCard {
+        padding: 0.75rem;
+        border-width: 1px;
+    }
+
+    .embedUrl {
+        gap: 0.5rem;
+    }
+
+    .codeText {
+        min-height: 70px;
+    }
+}
+
+/* Scrollbar styling for better UX */
+.dataContent::-webkit-scrollbar {
+    height: 6px;
+}
+
+.dataContent::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.dataContent::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.dataContent::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.codeBlock::-webkit-scrollbar {
+    height: 6px;
+}
+
+.codeBlock::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 3px;
+}
+
+.codeBlock::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+
+.codeBlock::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}

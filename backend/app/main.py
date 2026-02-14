@@ -136,8 +136,21 @@ def ui_embed_js(key: str = ""):
     # Website chat widget: a tiny embedded chat UI that talks to our server-side agent team.
     js = f"""(function() {{
   'use strict';
-  var script = document.currentScript;
-  var src = (script && script.src) ? script.src : '';
+  function findScriptSrc() {{
+    try {{
+      if (document.currentScript && document.currentScript.src) return document.currentScript.src;
+    }} catch (e) {{}}
+    try {{
+      var scripts = document.querySelectorAll('script[src]');
+      for (var i = scripts.length - 1; i >= 0; i--) {{
+        var s = scripts[i].getAttribute('src') || '';
+        if (s.indexOf('/embed.js') !== -1 && s.indexOf('key=') !== -1) return scripts[i].src || s;
+      }}
+    }} catch (e) {{}}
+    return '';
+  }}
+
+  var src = findScriptSrc();
   var u = null;
   try {{ u = new URL(src); }} catch (e) {{}}
   var backendOrigin = u ? u.origin : '';
@@ -252,10 +265,25 @@ def ui_embed_js(key: str = ""):
   send.addEventListener('click', sendMsg);
   input.addEventListener('keydown', function(e) {{ if (e.key === 'Enter') sendMsg(); }});
 
-  document.body.appendChild(fab);
-  document.body.appendChild(panel);
+  function mount() {{
+    try {{
+      if (!document.body) return;
+      document.body.appendChild(fab);
+      document.body.appendChild(panel);
+    }} catch (e) {{}}
+  }}
+
+  if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', mount, {{ once:true }});
+  }} else {{
+    mount();
+  }}
 }})();"""
-    return Response(content=js, media_type="application/javascript; charset=utf-8")
+    return Response(
+        content=js,
+        media_type="application/javascript; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/app/login", include_in_schema=False)

@@ -646,6 +646,8 @@ async function loadEmbedKey() {
   const maskedEl = document.getElementById("embedKeyMasked");
   const linkEl = document.getElementById("embedInstallLink");
   const snippetEl = document.getElementById("embedSnippet");
+  const devWrap = document.getElementById("embedDevWrap");
+  const devSnippetEl = document.getElementById("embedDevSnippet");
   const msgEl = document.getElementById("embedMsg");
   if (!maskedEl || !linkEl || !snippetEl) return;
 
@@ -658,6 +660,7 @@ async function loadEmbedKey() {
 
     // Store real snippet for copy, and also show real snippet as requested.
     window.__reaiEmbedSnippet = String(data.install_snippet || "");
+    window.__reaiEmbedDevSnippet = String(data.dev_snippet || "");
     window.__reaiEmbedInstallUrl = String(data.install_script_url || "");
     // Try to extract the real key from the URL (so "Copy key" can copy the full value).
     window.__reaiEmbedKey = "";
@@ -668,6 +671,19 @@ async function loadEmbedKey() {
     linkEl.textContent = String(data.install_script_url || "-");
     linkEl.href = data.install_script_url || "#";
     snippetEl.textContent = String(data.install_snippet || "");
+
+    // Ngrok workaround snippet (if backend provided it).
+    if (devWrap && devSnippetEl && window.__reaiEmbedDevSnippet) {
+      devWrap.style.display = "block";
+      devSnippetEl.textContent = window.__reaiEmbedDevSnippet;
+      const copyDevBtn = document.getElementById("copyEmbedDevSnippet");
+      if (copyDevBtn) copyDevBtn.style.display = "inline-flex";
+    } else {
+      if (devWrap) devWrap.style.display = "none";
+      if (devSnippetEl) devSnippetEl.textContent = "";
+      const copyDevBtn = document.getElementById("copyEmbedDevSnippet");
+      if (copyDevBtn) copyDevBtn.style.display = "none";
+    }
     if (msgEl) msgEl.textContent = "Ready. Paste the snippet into your website <head> or before </body>.";
   } catch (err) {
     if (msgEl) msgEl.textContent = (err && err.message) ? err.message : "Login required (or API not ready).";
@@ -677,6 +693,7 @@ async function loadEmbedKey() {
 function onDashboardWidget() {
   const btn = document.getElementById("refreshEmbedKey");
   const copyBtn = document.getElementById("copyEmbedSnippet");
+  const copyDevBtn = document.getElementById("copyEmbedDevSnippet");
   const copyKeyBtn = document.getElementById("copyEmbedKey");
   if (btn) btn.addEventListener("click", loadEmbedKey);
   if (copyBtn) copyBtn.addEventListener("click", async () => {
@@ -702,6 +719,31 @@ function onDashboardWidget() {
       if (msgEl) msgEl.textContent = "Snippet copied.";
     } catch (e) {
       if (msgEl) msgEl.textContent = "Copy failed. Open the install link and copy from the address bar.";
+    }
+  });
+  if (copyDevBtn) copyDevBtn.addEventListener("click", async () => {
+    const msgEl = document.getElementById("embedMsg");
+    const s = String(window.__reaiEmbedDevSnippet || "");
+    if (!s) {
+      if (msgEl) msgEl.textContent = "Ngrok snippet not available.";
+      return;
+    }
+    try {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(s);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = s;
+        ta.style.position = "fixed";
+        ta.style.left = "-1000px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      if (msgEl) msgEl.textContent = "Ngrok snippet copied.";
+    } catch (e) {
+      if (msgEl) msgEl.textContent = "Copy failed.";
     }
   });
   if (copyKeyBtn) copyKeyBtn.addEventListener("click", async () => {

@@ -29,6 +29,25 @@ def _stripe_config_ok(settings) -> tuple[bool, str]:
     return True, ""
 
 
+@router.get("/config")
+def billing_config():
+    """
+    Diagnostics endpoint (no secrets) to explain why checkout fails.
+    """
+    s = get_settings()
+    def valid_price(v: str) -> bool:
+        return bool(v) and str(v).startswith("price_")
+    return {
+        "stripe_secret_key_present": bool(s.STRIPE_SECRET_KEY),
+        "stripe_secret_key_prefix": (s.STRIPE_SECRET_KEY[:3] if s.STRIPE_SECRET_KEY else ""),
+        "stripe_price_id_valid": valid_price(s.STRIPE_PRICE_ID),
+        "stripe_price_id_agency_valid": valid_price(s.STRIPE_PRICE_ID_AGENCY),
+        "stripe_price_id_pro_valid": valid_price(s.STRIPE_PRICE_ID_PRO),
+        "success_url": s.STRIPE_SUCCESS_URL,
+        "cancel_url": s.STRIPE_CANCEL_URL,
+    }
+
+
 @router.post("/checkout")
 def create_checkout_session(
     plan: str = Query(default="agency", pattern="^(agency|pro)$"),
@@ -40,13 +59,17 @@ def create_checkout_session(
     if not ok:
         raise HTTPException(status_code=503, detail=f"Stripe not configured: {msg}")
 
-    price_id = settings.STRIPE_PRICE_ID
-    if plan == "agency" and settings.STRIPE_PRICE_ID_AGENCY:
-        price_id = settings.STRIPE_PRICE_ID_AGENCY
-    if plan == "pro" and settings.STRIPE_PRICE_ID_PRO:
-        price_id = settings.STRIPE_PRICE_ID_PRO
+    # Prefer explicit plan-specific price IDs; fallback to STRIPE_PRICE_ID.
+    price_id = ""
+    if plan == "agency":
+        price_id = settings.STRIPE_PRICE_ID_AGENCY or settings.STRIPE_PRICE_ID
+    elif plan == "pro":
+        price_id = settings.STRIPE_PRICE_ID_PRO or settings.STRIPE_PRICE_ID
     if not price_id or not str(price_id).startswith("price_"):
-        raise HTTPException(status_code=503, detail="Stripe not configured: invalid price id (expected price_...)")
+        raise HTTPException(
+            status_code=503,
+            detail="Stripe not configured: invalid price id for plan (expected price_...). Check /api/v1/billing/config",
+        )
 
     _set_stripe_key()
 

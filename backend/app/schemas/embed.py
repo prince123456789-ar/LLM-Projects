@@ -19,4 +19,4 @@ class EmbedKeyResponse(BaseModel):
     masked_key: str
     install_script_url: str
     install_snippet: str
-
+    dev_snippet: str | None = None

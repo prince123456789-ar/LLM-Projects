@@ -90,6 +90,7 @@
             <h3>Deploy Agent (Embeddable)</h3>
             <div class="row">
               <button class="btn" id="copyEmbedSnippet" type="button">Copy snippet</button>
+              <button class="btn" id="copyEmbedDevSnippet" type="button" style="display:none">Copy ngrok snippet</button>
               <button class="btn" id="refreshEmbedKey" type="button">Refresh</button>
             </div>
           </div>
@@ -110,6 +111,10 @@
             <div class="card" style="box-shadow:none">
               <div class="muted small">JS embed snippet</div>
               <pre id="embedSnippet" class="codebox wrap-anywhere" style="margin-top:10px;white-space:pre-wrap"></pre>
+              <div id="embedDevWrap" style="display:none;margin-top:12px">
+                <div class="muted small">Ngrok dev snippet (works around ngrok browser warning)</div>
+                <pre id="embedDevSnippet" class="codebox wrap-anywhere" style="margin-top:10px;white-space:pre-wrap"></pre>
+              </div>
               <div class="muted small" style="margin-top:10px">
                 Example: <code>&lt;script src="https://YOUR-DOMAIN/embed.js?key=YOUR_KEY" async&gt;&lt;/script&gt;</code>
               </div>

@@ -34,6 +34,24 @@ def _make_install(key_plain: str, request: Request) -> tuple[str, str]:
     return install_script_url, snippet
 
 
+def _make_ngrok_dev_snippet(install_script_url: str) -> str | None:
+    # ngrok free plan may serve an interstitial page that breaks <script src=...>.
+    # In dev, users can inline-boot the widget by fetching with the skip header.
+    if ".ngrok-free.app" not in (install_script_url or ""):
+        return None
+    return (
+        "<script>\n"
+        "(async () => {\n"
+        "  const r = await fetch("
+        + repr(install_script_url)
+        + ", { headers: { 'ngrok-skip-browser-warning': '1' } });\n"
+        "  const js = await r.text();\n"
+        "  (0, eval)(js);\n"
+        "})();\n"
+        "</script>"
+    )
+
+
 def _ensure_primary_key(db: Session, user: User, request: Request) -> tuple[EmbedKey, str]:
     settings = get_settings()
     row = (
@@ -94,7 +112,14 @@ def primary_embed_key(
 ):
     row, plain = _ensure_primary_key(db, current_user, request)
     install_url, snippet = _make_install(plain, request)
-    return EmbedKeyResponse(id=row.id, masked_key=_masked(row.prefix), install_script_url=install_url, install_snippet=snippet)
+    dev = _make_ngrok_dev_snippet(install_url)
+    return EmbedKeyResponse(
+        id=row.id,
+        masked_key=_masked(row.prefix),
+        install_script_url=install_url,
+        install_snippet=snippet,
+        dev_snippet=dev,
+    )
 
 
 @router.post("/leads")

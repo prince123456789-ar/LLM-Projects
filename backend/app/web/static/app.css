@@ -47,7 +47,10 @@ code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono
   border:1px solid var(--line);
   background:rgba(0,0,0,.22);
   color:rgba(234,240,255,.92);
+  max-width:100%;
 }
+.codebox pre{max-width:100%}
+pre.codebox{overflow-x:auto}
 .wrap-anywhere{
   overflow-wrap:anywhere;
   word-break:break-word;
