@@ -84,6 +84,10 @@ def ui_terms():
 def ui_login():
     return _page("app-login.html")
 
+@app.get("/app/register", include_in_schema=False)
+def ui_register():
+    return _page("app-register.html")
+
 
 @app.get("/app/dashboard", include_in_schema=False)
 def ui_dashboard():

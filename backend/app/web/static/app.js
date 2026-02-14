@@ -399,6 +399,36 @@ async function onAuditPage() {
   load();
 }
 
+async function onRegisterPage() {
+  const form = document.getElementById("registerForm");
+  const msg = document.getElementById("registerMsg");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "Registering...";
+    try {
+      const payload = {
+        full_name: document.getElementById("rName").value,
+        email: document.getElementById("rEmail").value,
+        password: document.getElementById("rPassword").value,
+        role: document.getElementById("rRole").value
+      };
+      const res = await fetch("/api/v1/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Registration failed");
+      msg.textContent = "Registered. You can now sign in.";
+      setTimeout(() => { window.location.href = "/app/login"; }, 800);
+    } catch (err) {
+      msg.textContent = (err && err.message) ? err.message : "Registration failed";
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const page = (document.body && document.body.dataset && document.body.dataset.page) ? document.body.dataset.page : "";
   if (page === "login") onLoginPage();
@@ -407,4 +437,5 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "integrations") onIntegrationsPage();
   if (page === "appointments") onAppointmentsPage();
   if (page === "audit") onAuditPage();
+  if (page === "register") onRegisterPage();
 });

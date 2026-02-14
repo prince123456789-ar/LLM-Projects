@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sign in | RealEstateAI</title>
+    <title>Register | RealEstateAI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,650&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/app.css" />
   </head>
-  <body data-page="login">
+  <body data-page="register">
     <header class="topbar">
       <a class="brand" href="/"><span class="brand-mark">RE</span><span class="brand-name">RealEstateAI</span></a>
       <nav class="nav">
@@ -24,20 +24,24 @@
       <section class="page-inner">
         <div class="app-shell">
           <aside class="side">
-            <h2 class="side-title">Sign in</h2>
-            <p class="muted">Use your agency credentials to access the dashboard.</p>
+            <h2 class="side-title">Create your account</h2>
+            <p class="muted">Register a workspace admin or manager. If registration is disabled, ask your admin to invite you.</p>
           </aside>
           <section class="card app-card">
-            <form id="loginForm" class="grid">
-              <input id="email" type="email" placeholder="Email" autocomplete="username" required />
-              <input id="password" type="password" placeholder="Password" autocomplete="current-password" required />
-              <button class="btn primary" type="submit">Sign in</button>
-              <a class="btn" href="/api/v1/auth/google/login">Continue with Google</a>
-              <div id="loginMsg" class="muted small"></div>
+            <form id="registerForm" class="grid">
+              <input id="rName" placeholder="Full name" required />
+              <input id="rEmail" type="email" placeholder="Email" autocomplete="username" required />
+              <input id="rPassword" type="password" placeholder="Password" autocomplete="new-password" required />
+              <select id="rRole">
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+                <option value="agent">Agent</option>
+              </select>
+              <button class="btn primary" type="submit">Register</button>
+              <div id="registerMsg" class="muted small"></div>
             </form>
             <div class="row">
-              <a class="btn" href="/app/dashboard">Continue</a>
-              <button class="btn ghost" type="button" id="logoutBtn">Log out</button>
+              <a class="btn" href="/app/login">Back to sign in</a>
             </div>
           </section>
         </div>
@@ -53,3 +57,4 @@
     <script src="/static/app.js" defer></script>
   </body>
 </html>
+
