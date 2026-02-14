@@ -1,5 +1,8 @@
 ﻿# Secrets
 .env
+.env.*
+backend/.env
+backend/.env.*
 *.pem
 *.key
 *.p12

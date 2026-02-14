@@ -46,9 +46,14 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Sessio
     except Exception:
         # Do not leak SMTP details to client.
         audit_event(db, "password_reset_email_failed", "auth", user_id=user.id, details="smtp_error")
+        if settings.ENVIRONMENT.lower() != "production":
+            # Dev-only: allow testing without SMTP by returning the reset URL.
+            return {"status": "ok", "debug_reset_url": reset_url}
         return {"status": "ok"}
 
     audit_event(db, "password_reset_requested", "auth", user_id=user.id, ip_address=request.client.host if request.client else None)
+    if settings.ENVIRONMENT.lower() != "production":
+        return {"status": "ok", "debug_reset_url": reset_url}
     return {"status": "ok"}
 
 
@@ -78,4 +83,3 @@ def reset_password(payload: ResetPasswordRequest, request: Request, db: Session 
 
     audit_event(db, "password_reset_completed", "auth", user_id=user.id, ip_address=request.client.host if request.client else None)
     return {"status": "ok"}
-

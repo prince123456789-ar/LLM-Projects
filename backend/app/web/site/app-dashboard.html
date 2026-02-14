@@ -84,12 +84,40 @@
           </div>
           <div id="dashMsg" class="muted small"></div>
         </div>
+
+        <div class="card">
+          <div class="row space">
+            <h3>Website widget</h3>
+            <div class="row">
+              <button class="btn" id="copyEmbedSnippet" type="button">Copy snippet</button>
+              <button class="btn" id="refreshEmbedKey" type="button">Refresh</button>
+            </div>
+          </div>
+          <p class="muted small">
+            Install a lightweight lead capture widget on your website. The key is shown masked in the dashboard, but the install link contains it.
+          </p>
+          <div class="grid-3" style="margin-top:12px">
+            <div class="card metric" style="box-shadow:none">
+              <div class="muted small">Embed key (masked)</div>
+              <div id="embedKeyMasked" class="metric-value">-</div>
+            </div>
+            <div class="card metric" style="box-shadow:none">
+              <div class="muted small">Install link</div>
+              <div class="muted small"><a id="embedInstallLink" href="#" target="_blank" rel="noopener">-</a></div>
+            </div>
+            <div class="card metric" style="box-shadow:none">
+              <div class="muted small">Snippet</div>
+              <pre id="embedSnippet" class="codebox" style="margin:0;white-space:pre-wrap"></pre>
+            </div>
+          </div>
+          <div id="embedMsg" class="muted small"></div>
+        </div>
       </section>
     </main>
 
     <footer class="footer">
       <div class="footer-inner">
-        <div class="muted">© RealEstateAI</div>
+        <div class="muted">(c) RealEstateAI</div>
       </div>
     </footer>
 

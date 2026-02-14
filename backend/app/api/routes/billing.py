@@ -21,6 +21,14 @@ def _set_stripe_key() -> None:
         stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+def _stripe_config_ok(settings) -> tuple[bool, str]:
+    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_SECRET_KEY.startswith("sk_"):
+        return False, "Stripe secret key is missing/invalid (expected sk_...)"
+    if not (settings.STRIPE_PRICE_ID or settings.STRIPE_PRICE_ID_AGENCY or settings.STRIPE_PRICE_ID_PRO):
+        return False, "Stripe price id(s) missing (set STRIPE_PRICE_ID_AGENCY/PRO)"
+    return True, ""
+
+
 @router.post("/checkout")
 def create_checkout_session(
     plan: str = Query(default="agency", pattern="^(agency|pro)$"),
@@ -28,31 +36,37 @@ def create_checkout_session(
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
 ):
     settings = get_settings()
-    if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_PRICE_ID:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
+    ok, msg = _stripe_config_ok(settings)
+    if not ok:
+        raise HTTPException(status_code=503, detail=f"Stripe not configured: {msg}")
 
     price_id = settings.STRIPE_PRICE_ID
     if plan == "agency" and settings.STRIPE_PRICE_ID_AGENCY:
         price_id = settings.STRIPE_PRICE_ID_AGENCY
     if plan == "pro" and settings.STRIPE_PRICE_ID_PRO:
         price_id = settings.STRIPE_PRICE_ID_PRO
+    if not price_id or not str(price_id).startswith("price_"):
+        raise HTTPException(status_code=503, detail="Stripe not configured: invalid price id (expected price_...)")
 
     _set_stripe_key()
 
     customer_id = current_user.stripe_customer_id
-    if not customer_id:
-        customer = stripe.Customer.create(email=current_user.email, name=current_user.full_name)
-        customer_id = customer["id"]
-        current_user.stripe_customer_id = customer_id
-        db.commit()
+    try:
+        if not customer_id:
+            customer = stripe.Customer.create(email=current_user.email, name=current_user.full_name)
+            customer_id = customer["id"]
+            current_user.stripe_customer_id = customer_id
+            db.commit()
 
-    session = stripe.checkout.Session.create(
-        customer=customer_id,
-        mode="subscription",
-        line_items=[{"price": price_id, "quantity": 1}],
-        success_url=settings.STRIPE_SUCCESS_URL,
-        cancel_url=settings.STRIPE_CANCEL_URL,
-    )
+        session = stripe.checkout.Session.create(
+            customer=customer_id,
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=settings.STRIPE_SUCCESS_URL,
+            cancel_url=settings.STRIPE_CANCEL_URL,
+        )
+    except stripe.error.StripeError:
+        raise HTTPException(status_code=502, detail="Stripe checkout failed (verify keys/prices in .env)")
 
     audit_event(db, "billing_checkout_create", "billing", user_id=current_user.id)
     return {"checkout_url": session.get("url"), "session_id": session.get("id")}
@@ -64,16 +78,20 @@ def create_customer_portal(
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
 ):
     settings = get_settings()
-    if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
+    ok, msg = _stripe_config_ok(settings)
+    if not ok:
+        raise HTTPException(status_code=503, detail=f"Stripe not configured: {msg}")
     if not current_user.stripe_customer_id:
         raise HTTPException(status_code=400, detail="No Stripe customer linked")
 
     _set_stripe_key()
-    session = stripe.billing_portal.Session.create(
-        customer=current_user.stripe_customer_id,
-        return_url=settings.STRIPE_SUCCESS_URL,
-    )
+    try:
+        session = stripe.billing_portal.Session.create(
+            customer=current_user.stripe_customer_id,
+            return_url=settings.STRIPE_SUCCESS_URL,
+        )
+    except stripe.error.StripeError:
+        raise HTTPException(status_code=502, detail="Stripe portal failed")
     return {"portal_url": session.get("url")}
 
 
@@ -99,8 +117,9 @@ def set_auto_renew(
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
 ):
     settings = get_settings()
-    if not settings.STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe not configured")
+    ok, msg = _stripe_config_ok(settings)
+    if not ok:
+        raise HTTPException(status_code=503, detail=f"Stripe not configured: {msg}")
 
     sub = db.query(BillingSubscription).filter(BillingSubscription.user_id == current_user.id).order_by(BillingSubscription.created_at.desc()).first()
     if not sub or not sub.provider_subscription_id:
@@ -108,7 +127,10 @@ def set_auto_renew(
 
     _set_stripe_key()
     # Stripe: cancel_at_period_end=True means auto-renew disabled.
-    stripe.Subscription.modify(sub.provider_subscription_id, cancel_at_period_end=(not enabled))
+    try:
+        stripe.Subscription.modify(sub.provider_subscription_id, cancel_at_period_end=(not enabled))
+    except stripe.error.StripeError:
+        raise HTTPException(status_code=502, detail="Stripe auto-renew update failed")
     sub.auto_renew_enabled = 1 if enabled else 0
     db.commit()
     audit_event(db, "billing_auto_renew_set", "billing", user_id=current_user.id, details=f"enabled={enabled}")

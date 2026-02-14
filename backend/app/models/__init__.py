@@ -8,6 +8,7 @@ from app.models.audit import AuditLog
 from app.models.billing import BillingSubscription, SubscriptionPlan, SubscriptionStatus
 from app.models.api_key import ApiKey
 from app.models.password_reset import PasswordResetToken
+from app.models.embed_key import EmbedKey
 
 __all__ = [
     "User",
@@ -29,4 +30,5 @@ __all__ = [
     "SubscriptionStatus",
     "ApiKey",
     "PasswordResetToken",
+    "EmbedKey",
 ]

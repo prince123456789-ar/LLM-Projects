@@ -128,14 +128,17 @@ function onLoginPage() {
 async function onDashboardPage() {
   try {
     const res = await apiFetch("/api/v1/analytics/dashboard", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to load dashboard");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || ("Failed to load dashboard (" + res.status + ")"));
+    }
     const data = await res.json();
     setText("mTotal", String(data.total_leads ?? "-"));
     setText("mResp", String(data.avg_response_time ?? "-"));
     setText("mConv", String(data.conversion_rate ?? "-"));
     setText("dashMsg", "Live metrics loaded from API.");
   } catch (err) {
-    setText("dashMsg", "Login required (or API not ready). Go to Account and sign in.");
+    setText("dashMsg", (err && err.message) ? err.message : "Login required (or API not ready).");
   }
 }
 
@@ -357,7 +360,12 @@ async function onDashboardChart() {
   async function load() {
     msg.textContent = "Loading...";
     try {
-      const m = await (await apiFetch("/api/v1/analytics/dashboard", { cache: "no-store" })).json();
+      const mRes = await apiFetch("/api/v1/analytics/dashboard", { cache: "no-store" });
+      if (!mRes.ok) {
+        const d = await mRes.json().catch(() => ({}));
+        throw new Error(d.detail || ("Failed to load dashboard (" + mRes.status + ")"));
+      }
+      const m = await mRes.json();
       setText("mTotal", String(m.total_leads ?? "-"));
       setText("mScore", String(m.avg_lead_score ?? "-"));
       setText("mConv", String(m.conversion_rate ?? "-") + "%");
@@ -366,13 +374,16 @@ async function onDashboardChart() {
       setText("mLoss", "$" + String(m.losses_usd ?? 0));
 
       const res = await apiFetch("/api/v1/analytics/timeseries?days=30", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load chart");
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || ("Failed to load chart (" + res.status + ")"));
+      }
       const data = await res.json();
       const series = (data || []).map((p) => ({ label: p.day, value: Number(p.profit_usd || 0) }));
       drawLineChart(canvas, series.length ? series : [{ label: "0", value: 0 }]);
       msg.textContent = "Updated.";
     } catch (err) {
-      msg.textContent = "Login required (or API not ready).";
+      msg.textContent = (err && err.message) ? err.message : "Login required (or API not ready).";
     }
   }
 
@@ -631,10 +642,75 @@ async function onAdminPage() {
   load();
 }
 
+async function loadEmbedKey() {
+  const maskedEl = document.getElementById("embedKeyMasked");
+  const linkEl = document.getElementById("embedInstallLink");
+  const snippetEl = document.getElementById("embedSnippet");
+  const msgEl = document.getElementById("embedMsg");
+  if (!maskedEl || !linkEl || !snippetEl) return;
+
+  try {
+    if (msgEl) msgEl.textContent = "Loading widget key...";
+    const res = await apiFetch("/api/v1/embed/keys/primary", { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || ("Failed to load widget key (" + res.status + ")"));
+    maskedEl.textContent = data.masked_key || "-";
+    window.__reaiEmbedSnippet = String(data.install_snippet || "");
+    // Show masked text but keep full URL in href so the user can copy it.
+    let maskedUrlText = data.install_script_url || "-";
+    try {
+      const u = new URL(String(data.install_script_url || ""));
+      if (u.searchParams.get("key")) u.searchParams.set("key", "****");
+      maskedUrlText = u.toString();
+    } catch (_) {}
+    linkEl.textContent = maskedUrlText;
+    linkEl.href = data.install_script_url || "#";
+    // Mask snippet in UI to avoid showing full key on screen.
+    let maskedSnippet = String(data.install_snippet || "");
+    maskedSnippet = maskedSnippet.replace(/key=[^\"'\\s>]+/g, "key=****");
+    snippetEl.textContent = maskedSnippet;
+    if (msgEl) msgEl.textContent = "Ready. Paste the snippet into your website <head> or before </body>.";
+  } catch (err) {
+    if (msgEl) msgEl.textContent = (err && err.message) ? err.message : "Login required (or API not ready).";
+  }
+}
+
+function onDashboardWidget() {
+  const btn = document.getElementById("refreshEmbedKey");
+  const copyBtn = document.getElementById("copyEmbedSnippet");
+  if (btn) btn.addEventListener("click", loadEmbedKey);
+  if (copyBtn) copyBtn.addEventListener("click", async () => {
+    const msgEl = document.getElementById("embedMsg");
+    const s = String(window.__reaiEmbedSnippet || "");
+    if (!s) {
+      if (msgEl) msgEl.textContent = "Snippet not ready yet.";
+      return;
+    }
+    try {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(s);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = s;
+        ta.style.position = "fixed";
+        ta.style.left = "-1000px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      if (msgEl) msgEl.textContent = "Snippet copied.";
+    } catch (e) {
+      if (msgEl) msgEl.textContent = "Copy failed. Open the install link and copy from the address bar.";
+    }
+  });
+  loadEmbedKey();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const page = (document.body && document.body.dataset && document.body.dataset.page) ? document.body.dataset.page : "";
   if (page === "login") onLoginPage();
-  if (page === "dashboard") { onDashboardPage(); onDashboardChart(); }
+  if (page === "dashboard") { onDashboardPage(); onDashboardChart(); onDashboardWidget(); }
   if (page === "leads") onLeadsPage();
   if (page === "integrations") onIntegrationsPage();
   if (page === "appointments") onAppointmentsPage();

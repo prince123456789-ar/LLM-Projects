@@ -7,7 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     # Ignore unknown env vars so a shared .env can contain provider-specific placeholders
     # without breaking backend startup.
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
+    # When running locally via `saas/scripts/start-local.ps1`, cwd is `saas/backend`, but users
+    # often edit `saas/.env`. Load both (backend/.env first, then repo-root/.env).
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), case_sensitive=True, extra="ignore")
 
     PROJECT_NAME: str = "RealEstateAI"
     ENVIRONMENT: str = "development"
@@ -31,7 +33,9 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://redis:6379/1"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"
 
-    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # Default to allow any origin for the website embed SDK. In production, set this
+    # to an explicit allowlist of your domains.
+    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["*"])
     ALLOWED_HOSTS: list[str] = Field(
         default_factory=lambda: [
             "*.onrender.com",
@@ -64,6 +68,7 @@ class Settings(BaseSettings):
 
     # API keys / plans
     API_KEY_PREFIX: str = "rea_"
+    EMBED_KEY_PREFIX: str = "rep_"
 
     LOGIN_MAX_ATTEMPTS: int = 5
     LOGIN_LOCK_MINUTES: int = 15
@@ -96,6 +101,13 @@ class Settings(BaseSettings):
                 raise ValueError("ENABLE_API_DOCS must be false in production")
             if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
                 raise ValueError("SECRET_KEY must be 32+ chars in production")
+            if any(h == "*" for h in self.ALLOWED_HOSTS):
+                raise ValueError('ALLOWED_HOSTS must not contain "*" in production')
+        else:
+            # Developer convenience: avoid ngrok/preview "Invalid host header" issues.
+            # (Do NOT use wildcard hosts in production.)
+            if not self.ALLOWED_HOSTS:
+                self.ALLOWED_HOSTS = ["*"]
         return self
 
     @property

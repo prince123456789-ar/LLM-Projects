@@ -35,6 +35,12 @@ def get_current_user(
         user = db.query(User).filter(User.id == int(row.user_id)).first()
         if not user:
             raise credentials_exception
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="User inactive")
+        if user.locked_until and user.locked_until > datetime.now(timezone.utc).replace(tzinfo=None):
+            raise HTTPException(status_code=423, detail="Account locked")
+        row.last_used_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        db.commit()
         return user
 
     try:

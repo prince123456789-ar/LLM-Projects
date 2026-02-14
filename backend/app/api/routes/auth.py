@@ -40,7 +40,8 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     if not settings.ALLOW_PUBLIC_SIGNUP:
         raise HTTPException(status_code=403, detail="Public signup is disabled")
 
-    # Least privilege: public signup cannot create admin accounts.
+    # Least privilege: public signup creates a manager account (billing/analytics enabled),
+    # and can never create admin accounts.
     if payload.role == UserRole.admin:
         raise HTTPException(status_code=403, detail="Admin accounts must be created by backend bootstrap")
 
@@ -58,7 +59,7 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
         full_name=payload.full_name,
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
-        role=payload.role,
+        role=UserRole.manager,
     )
     db.add(user)
     db.commit()

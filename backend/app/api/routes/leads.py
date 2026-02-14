@@ -80,7 +80,21 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db), current_user
     db.refresh(lead)
 
     if lead.status == LeadStatus.new:
-        send_followup_message.delay(lead.id, lead.channel.value, "Thanks for reaching out. We will contact you shortly.")
+        # Don't fail lead creation if the async worker/broker isn't running in local dev.
+        try:
+            send_followup_message.delay(
+                lead.id,
+                lead.channel.value,
+                "Thanks for reaching out. We will contact you shortly.",
+            )
+        except Exception:
+            audit_event(
+                db,
+                "followup_enqueue_failed",
+                "lead",
+                user_id=current_user.id,
+                details=f"lead_id={lead.id}",
+            )
 
     audit_event(db, "lead_create", "lead", user_id=current_user.id, details=f"lead_id={lead.id}")
     return lead

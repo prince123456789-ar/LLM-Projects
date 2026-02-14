@@ -6,19 +6,31 @@ from sqlalchemy.orm import Session
 
 from app.models.billing import BillingSubscription, SubscriptionPlan, SubscriptionStatus
 from app.models.lead import Lead, LeadStatus
+from app.models.user import User, UserRole
 from app.schemas.analytics import DashboardMetrics, TimeSeriesPoint
 
 
-def get_dashboard_metrics(db: Session) -> DashboardMetrics:
-    total = db.query(func.count(Lead.id)).scalar() or 0
-    converted = db.query(func.count(Lead.id)).filter(Lead.status == LeadStatus.converted).scalar() or 0
-    avg_score = db.query(func.avg(Lead.score)).scalar() or 0.0
+def _lead_scope(db: Session, current_user: User | None):
+    q = db.query(Lead)
+    if current_user and current_user.role == UserRole.agent:
+        q = q.filter(Lead.assigned_agent_id == current_user.id)
+    return q
 
-    by_channel_rows = db.query(Lead.channel, func.count(Lead.id)).group_by(Lead.channel).all()
+
+def get_dashboard_metrics(db: Session, current_user: User | None = None) -> DashboardMetrics:
+    scoped = _lead_scope(db, current_user)
+    total = scoped.with_entities(func.count(Lead.id)).scalar() or 0
+    converted = scoped.with_entities(func.count(Lead.id)).filter(Lead.status == LeadStatus.converted).scalar() or 0
+    avg_score = scoped.with_entities(func.avg(Lead.score)).scalar() or 0.0
+
+    by_channel_rows = scoped.with_entities(Lead.channel, func.count(Lead.id)).group_by(Lead.channel).all()
     by_channel = {str(row[0]): row[1] for row in by_channel_rows}
 
-    by_agent_rows = db.query(Lead.assigned_agent_id, func.count(Lead.id)).group_by(Lead.assigned_agent_id).all()
-    by_agent = {str(row[0] or "unassigned"): row[1] for row in by_agent_rows}
+    if current_user and current_user.role == UserRole.agent:
+        by_agent = {str(current_user.id): int(total)}
+    else:
+        by_agent_rows = scoped.with_entities(Lead.assigned_agent_id, func.count(Lead.id)).group_by(Lead.assigned_agent_id).all()
+        by_agent = {str(row[0] or "unassigned"): row[1] for row in by_agent_rows}
 
     rate = (converted / total * 100.0) if total else 0.0
 
@@ -39,7 +51,7 @@ def get_dashboard_metrics(db: Session) -> DashboardMetrics:
         mrr += plan_price.get(plan, 0) * int(cnt or 0)
 
     # Losses estimate: "lost" leads are counted as opportunity loss with a small constant.
-    lost = db.query(func.count(Lead.id)).filter(Lead.status == LeadStatus.lost).scalar() or 0
+    lost = scoped.with_entities(func.count(Lead.id)).filter(Lead.status == LeadStatus.lost).scalar() or 0
     losses = int(lost * 10)  # placeholder estimate; replace with your own model
     profit = max(0, int(mrr - losses))
 
@@ -56,7 +68,7 @@ def get_dashboard_metrics(db: Session) -> DashboardMetrics:
     )
 
 
-def get_timeseries(db: Session, days: int = 30) -> list[TimeSeriesPoint]:
+def get_timeseries(db: Session, current_user: User | None = None, days: int = 30) -> list[TimeSeriesPoint]:
     days = max(7, min(int(days or 30), 90))
     start = (datetime.utcnow() - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -77,8 +89,9 @@ def get_timeseries(db: Session, days: int = 30) -> list[TimeSeriesPoint]:
 
     # Fast path: aggregate in a single query instead of 3 queries per day.
     day_col = func.date(Lead.created_at)
+    scoped = _lead_scope(db, current_user)
     rows = (
-        db.query(
+        scoped.with_entities(
             day_col.label("day"),
             func.count(Lead.id).label("created"),
             func.sum(case((Lead.status == LeadStatus.converted, 1), else_=0)).label("converted"),
