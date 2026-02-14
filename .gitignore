@@ -26,3 +26,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local dev artifacts
+backend/*.db
+frontend/.env.local

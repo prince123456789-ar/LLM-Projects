@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+const API_BASE = "/api/proxy";
 
 export type Lead = {
   id: number;
@@ -45,9 +45,7 @@ export async function login(email: string, password: string): Promise<LoginToken
 
   const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
     method: "POST",
-    headers: {
-      "x-device-id": getDeviceId()
-    },
+    headers: { "x-device-id": getDeviceId() },
     body
   });
   if (!res.ok) throw new Error("Invalid credentials");
@@ -58,10 +56,7 @@ export async function login(email: string, password: string): Promise<LoginToken
 export async function refreshAccessToken(refreshToken: string): Promise<LoginTokens> {
   const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-device-id": getDeviceId()
-    },
+    headers: { "Content-Type": "application/json", "x-device-id": getDeviceId() },
     body: JSON.stringify({ refresh_token: refreshToken })
   });
   if (!res.ok) throw new Error("Session expired");
@@ -71,14 +66,10 @@ export async function refreshAccessToken(refreshToken: string): Promise<LoginTok
 
 async function withAuthRetry(input: string, init: RequestInit = {}) {
   let access = localStorage.getItem("token") || "";
-  let refresh = localStorage.getItem("refresh_token") || "";
+  const refresh = localStorage.getItem("refresh_token") || "";
 
   const run = async (token: string) => {
-    const headers = {
-      ...(init.headers || {}),
-      ...authHeader(token)
-    } as Record<string, string>;
-
+    const headers = { ...(init.headers || {}), ...authHeader(token) } as Record<string, string>;
     return fetch(input, { ...init, headers });
   };
 
@@ -88,10 +79,8 @@ async function withAuthRetry(input: string, init: RequestInit = {}) {
     localStorage.setItem("token", tokens.access_token);
     localStorage.setItem("refresh_token", tokens.refresh_token);
     access = tokens.access_token;
-    refresh = tokens.refresh_token;
     res = await run(access);
   }
-
   return res;
 }
 
@@ -104,11 +93,7 @@ export async function fetchLeads(token: string): Promise<Lead[]> {
 
 export async function createLead(token: string, payload: Record<string, unknown>): Promise<Lead> {
   localStorage.setItem("token", token);
-  const res = await withAuthRetry(`${API_BASE}/api/v1/leads`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  const res = await withAuthRetry(`${API_BASE}/api/v1/leads`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!res.ok) throw new Error("Failed to create lead");
   return res.json();
 }
@@ -129,11 +114,7 @@ export async function fetchIntegrations(token: string): Promise<Record<string, u
 
 export async function saveIntegration(token: string, payload: Record<string, unknown>) {
   localStorage.setItem("token", token);
-  const res = await withAuthRetry(`${API_BASE}/api/v1/integrations/channels`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  const res = await withAuthRetry(`${API_BASE}/api/v1/integrations/channels`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!res.ok) throw new Error("Failed to save integration");
   return res.json();
 }
@@ -147,11 +128,7 @@ export async function fetchAppointmentSuggestions(token: string) {
 
 export async function createAppointment(token: string, payload: Record<string, unknown>) {
   localStorage.setItem("token", token);
-  const res = await withAuthRetry(`${API_BASE}/api/v1/appointments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  const res = await withAuthRetry(`${API_BASE}/api/v1/appointments`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!res.ok) throw new Error("Failed to create appointment");
   return res.json();
 }
@@ -166,11 +143,7 @@ export async function downloadReport(token: string, kind: "csv" | "pdf") {
 
 export async function createScheduledReport(token: string, payload: Record<string, unknown>) {
   localStorage.setItem("token", token);
-  const res = await withAuthRetry(`${API_BASE}/api/v1/reports/scheduled`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  const res = await withAuthRetry(`${API_BASE}/api/v1/reports/scheduled`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   if (!res.ok) throw new Error("Failed to create scheduled report");
   return res.json();
 }
@@ -184,9 +157,7 @@ export async function listScheduledReports(token: string) {
 
 export async function sendScheduledReportNow(token: string, reportId: number) {
   localStorage.setItem("token", token);
-  const res = await withAuthRetry(`${API_BASE}/api/v1/reports/scheduled/${reportId}/send-now`, {
-    method: "POST"
-  });
+  const res = await withAuthRetry(`${API_BASE}/api/v1/reports/scheduled/${reportId}/send-now`, { method: "POST" });
   if (!res.ok) throw new Error("Failed to queue scheduled report");
   return res.json();
 }

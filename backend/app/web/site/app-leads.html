@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leads | RealEstateAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,650&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">RE</span><span class="brand-name">RealEstateAI</span></a>
+      <nav class="nav">
+        <a href="/app/dashboard">Dashboard</a>
+        <a href="/app/leads">Leads</a>
+        <a href="/app/integrations">Integrations</a>
+        <a href="/app/appointments">Appointments</a>
+        <a href="/app/billing">Billing</a>
+        <a class="pill" href="/app/login">Account</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="page-inner">
+        <div class="app-header">
+          <h1 class="page-title">Leads</h1>
+          <div class="row">
+            <a class="btn" href="/app/dashboard">Dashboard</a>
+            <a class="btn ghost" href="/app/login">Account</a>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <section class="card">
+            <h3>Create lead</h3>
+            <form id="leadForm" class="grid">
+              <input id="lName" placeholder="Full name" required />
+              <input id="lEmail" placeholder="Email (optional)" />
+              <input id="lPhone" placeholder="Phone (optional)" />
+              <input id="lChannel" placeholder="Channel (e.g. website)" value="website" />
+              <input id="lLocation" placeholder="Location" />
+              <input id="lPropertyType" placeholder="Property type" />
+              <input id="lBudget" placeholder="Budget" />
+              <input id="lTimeline" placeholder="Timeline" />
+              <button class="btn primary" type="submit">Create</button>
+              <div id="leadMsg" class="muted small"></div>
+            </form>
+          </section>
+
+          <section class="card">
+            <div class="row space">
+              <h3>Inbox</h3>
+              <button class="btn" id="refreshLeads" type="button">Refresh</button>
+            </div>
+            <div class="table-wrap">
+              <table class="table" id="leadTable">
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Name</th><th>Channel</th><th>Score</th><th>Status</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="muted">RealEstateAI. Lead capture, scoring, routing, and analytics for medium agencies.</div>
+        <div class="muted">API: <code>/api/v1</code></div>
+      </div>
+    </footer>
+
+    <script>window.__PAGE__ = "leads";</script>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
+

@@ -5,7 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    # Ignore unknown env vars so a shared .env can contain provider-specific placeholders
+    # without breaking backend startup.
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
     PROJECT_NAME: str = "RealEstateAI"
     ENVIRONMENT: str = "development"
@@ -33,6 +35,9 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: list[str] = Field(default_factory=lambda: ["*.onrender.com", "localhost", "127.0.0.1"])
     FRONTEND_URL: str = "http://localhost:3000"
 
+    ENABLE_API_DOCS: bool = False
+    ALLOW_PUBLIC_SIGNUP: bool = False
+
     WEBHOOK_SHARED_SECRET: str = ""
     WEBHOOK_MAX_SKEW_SECONDS: int = 300
 
@@ -53,6 +58,9 @@ class Settings(BaseSettings):
     STRIPE_PRICE_ID: str = ""
     STRIPE_SUCCESS_URL: str = "http://localhost:3000/billing/success"
     STRIPE_CANCEL_URL: str = "http://localhost:3000/billing/cancel"
+
+    # Frontend proxy target for single-origin browser traffic.
+    BACKEND_INTERNAL_URL: str = "http://localhost:8000"
 
     # Crypto-agility switch to rotate algorithms/keys without code change.
     ZERO_TRUST_SIGNING_ALG: str = "HS512"

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing | RealEstateAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,650&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">RE</span><span class="brand-name">RealEstateAI</span></a>
+      <nav class="nav">
+        <a href="/pricing">Pricing</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a class="pill" href="/app/login">Sign in</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <section class="page-inner">
+        <h1 class="page-title">Pricing</h1>
+        <p class="muted">Simple pricing for medium agencies. Start free, upgrade when you need more seats and automation.</p>
+
+        <div class="grid-3">
+          <div class="card price">
+            <div class="price-name">Starter</div>
+            <div class="price-tag">$0</div>
+            <div class="muted">1 inbox, 1 agent, basic analytics</div>
+            <ul class="list">
+              <li>Lead capture + dedupe</li>
+              <li>Basic scoring</li>
+              <li>CSV export</li>
+            </ul>
+            <a class="btn primary" href="/app/login">Start</a>
+          </div>
+          <div class="card price featured">
+            <div class="price-name">Agency</div>
+            <div class="price-tag">$199<span class="muted">/mo</span></div>
+            <div class="muted">Up to 10 agents, automations</div>
+            <ul class="list">
+              <li>Auto assignment</li>
+              <li>Sequences + follow-ups</li>
+              <li>Integrations</li>
+            </ul>
+            <a class="btn primary" href="/app/billing">Upgrade</a>
+          </div>
+          <div class="card price">
+            <div class="price-name">Pro</div>
+            <div class="price-tag">$499<span class="muted">/mo</span></div>
+            <div class="muted">Unlimited agents, priority support</div>
+            <ul class="list">
+              <li>Advanced analytics</li>
+              <li>Scheduled PDF reporting</li>
+              <li>SLA support</li>
+            </ul>
+            <a class="btn" href="/app/billing">Talk to sales</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="muted">RealEstateAI. Lead capture, scoring, routing, and analytics for medium agencies.</div>
+        <div class="muted">API: <code>/api/v1</code></div>
+      </div>
+    </footer>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
+

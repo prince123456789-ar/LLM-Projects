@@ -62,7 +62,7 @@ export default function AppointmentsPage() {
           >
             {suggestions.map((s, idx) => (
               <option key={idx} value={`${s.start_at}|${s.end_at}`}>
-                {s.start_at} -> {s.end_at}
+                {s.start_at} {"->"} {s.end_at}
               </option>
             ))}
           </select>

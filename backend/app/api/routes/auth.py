@@ -26,6 +26,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=UserResponse)
 @limiter.limit("10/minute")
 def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
+    settings = get_settings()
+    if not settings.ALLOW_PUBLIC_SIGNUP:
+        raise HTTPException(status_code=403, detail="Public signup is disabled")
+
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")

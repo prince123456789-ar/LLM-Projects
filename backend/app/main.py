@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -15,7 +18,12 @@ from app.models import appointment, audit, billing, integration, lead, property,
 
 settings = get_settings()
 
-app = FastAPI(title=settings.PROJECT_NAME)
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    docs_url="/docs" if settings.ENABLE_API_DOCS else None,
+    redoc_url="/redoc" if settings.ENABLE_API_DOCS else None,
+    openapi_url="/openapi.json" if settings.ENABLE_API_DOCS else None,
+)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -43,9 +51,63 @@ def health(request: Request):
     return {"status": "ok"}
 
 
+_web_dir = Path(__file__).resolve().parent / "web"
+_site_dir = _web_dir / "site"
+app.mount("/static", StaticFiles(directory=str(_web_dir / "static")), name="static")
+
+
+def _page(name: str) -> FileResponse:
+    return FileResponse(str(_site_dir / name))
+
+
 @app.get("/", include_in_schema=False)
-def root():
-    return RedirectResponse(url=settings.FRONTEND_URL)
+def ui_home():
+    return _page("index.html")
+
+
+@app.get("/pricing", include_in_schema=False)
+def ui_pricing():
+    return _page("pricing.html")
+
+
+@app.get("/privacy", include_in_schema=False)
+def ui_privacy():
+    return _page("privacy.html")
+
+
+@app.get("/terms", include_in_schema=False)
+def ui_terms():
+    return _page("terms.html")
+
+
+@app.get("/app/login", include_in_schema=False)
+def ui_login():
+    return _page("app-login.html")
+
+
+@app.get("/app/dashboard", include_in_schema=False)
+def ui_dashboard():
+    return _page("app-dashboard.html")
+
+
+@app.get("/app/leads", include_in_schema=False)
+def ui_leads():
+    return _page("app-leads.html")
+
+
+@app.get("/app/integrations", include_in_schema=False)
+def ui_integrations():
+    return _page("app-integrations.html")
+
+
+@app.get("/app/appointments", include_in_schema=False)
+def ui_appointments():
+    return _page("app-appointments.html")
+
+
+@app.get("/app/billing", include_in_schema=False)
+def ui_billing():
+    return _page("app-billing.html")
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
