@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -34,18 +34,29 @@
 
         <section class="card">
           <h3>Stripe</h3>
-          <p class="muted">Manage subscriptions and invoices from this section.</p>
-          <div class="muted small">This starter keeps billing endpoints behind the API; this page is the UI entry point.</div>
+          <p class="muted">Upgrade your plan and manage invoices.</p>
+          <div class="row">
+            <select id="planSelect">
+              <option value="agency">Agency ($99/mo)</option>
+              <option value="pro">Pro ($199/mo)</option>
+            </select>
+            <button class="btn primary" id="startCheckout" type="button">Start Checkout</button>
+            <button class="btn" id="openPortal" type="button">Open Customer Portal</button>
+            <button class="btn" id="refreshBilling" type="button">Refresh Status</button>
+          </div>
+          <div id="billingStatus" class="muted small" style="margin-top:10px"></div>
+          <div id="billingMsg" class="muted small"></div>
         </section>
       </section>
     </main>
 
     <footer class="footer">
       <div class="footer-inner">
-        <div class="muted">© RealEstateAI</div>
+        <div class="muted">(c) RealEstateAI</div>
       </div>
     </footer>
 
     <script src="/static/app.js" defer></script>
   </body>
 </html>
+

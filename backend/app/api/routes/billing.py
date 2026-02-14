@@ -1,5 +1,5 @@
 import stripe
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -10,18 +10,31 @@ from app.models.user import User, UserRole
 from app.services.audit import audit_event
 
 router = APIRouter(prefix="/billing", tags=["billing"])
-settings = get_settings()
-if settings.STRIPE_SECRET_KEY:
-    stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+def _set_stripe_key() -> None:
+    settings = get_settings()
+    if settings.STRIPE_SECRET_KEY:
+        stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 @router.post("/checkout")
 def create_checkout_session(
+    plan: str = Query(default="agency", pattern="^(agency|pro)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
 ):
+    settings = get_settings()
     if not settings.STRIPE_SECRET_KEY or not settings.STRIPE_PRICE_ID:
         raise HTTPException(status_code=503, detail="Stripe not configured")
+
+    price_id = settings.STRIPE_PRICE_ID
+    if plan == "agency" and settings.STRIPE_PRICE_ID_AGENCY:
+        price_id = settings.STRIPE_PRICE_ID_AGENCY
+    if plan == "pro" and settings.STRIPE_PRICE_ID_PRO:
+        price_id = settings.STRIPE_PRICE_ID_PRO
+
+    _set_stripe_key()
 
     customer_id = current_user.stripe_customer_id
     if not customer_id:
@@ -33,7 +46,7 @@ def create_checkout_session(
     session = stripe.checkout.Session.create(
         customer=customer_id,
         mode="subscription",
-        line_items=[{"price": settings.STRIPE_PRICE_ID, "quantity": 1}],
+        line_items=[{"price": price_id, "quantity": 1}],
         success_url=settings.STRIPE_SUCCESS_URL,
         cancel_url=settings.STRIPE_CANCEL_URL,
     )
@@ -47,16 +60,32 @@ def create_customer_portal(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
 ):
+    settings = get_settings()
     if not settings.STRIPE_SECRET_KEY:
         raise HTTPException(status_code=503, detail="Stripe not configured")
     if not current_user.stripe_customer_id:
         raise HTTPException(status_code=400, detail="No Stripe customer linked")
 
+    _set_stripe_key()
     session = stripe.billing_portal.Session.create(
         customer=current_user.stripe_customer_id,
         return_url=settings.STRIPE_SUCCESS_URL,
     )
     return {"portal_url": session.get("url")}
+
+
+@router.get("/status")
+def billing_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
+):
+    sub = db.query(BillingSubscription).filter(BillingSubscription.user_id == current_user.id).order_by(BillingSubscription.created_at.desc()).first()
+    return {
+        "has_customer": bool(current_user.stripe_customer_id),
+        "plan": sub.plan.value if sub else "starter",
+        "status": sub.status.value if sub else "trial",
+        "provider_subscription_id": sub.provider_subscription_id if sub else None,
+    }
 
 
 @router.post("/webhook")
@@ -65,10 +94,12 @@ async def stripe_webhook(
     stripe_signature: str | None = Header(default=None, alias="stripe-signature"),
     db: Session = Depends(get_db),
 ):
+    settings = get_settings()
     payload = await request.body()
     if not settings.STRIPE_WEBHOOK_SECRET:
         raise HTTPException(status_code=503, detail="Stripe webhook secret not configured")
 
+    _set_stripe_key()
     try:
         event = stripe.Webhook.construct_event(payload, stripe_signature, settings.STRIPE_WEBHOOK_SECRET)
     except Exception:

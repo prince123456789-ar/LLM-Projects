@@ -439,6 +439,64 @@ async function onRegisterPage() {
   });
 }
 
+async function onBillingPage() {
+  const msg = document.getElementById("billingMsg");
+  const statusEl = document.getElementById("billingStatus");
+  const planSelect = document.getElementById("planSelect");
+  const checkoutBtn = document.getElementById("startCheckout");
+  const portalBtn = document.getElementById("openPortal");
+  const refreshBtn = document.getElementById("refreshBilling");
+
+  async function refreshStatus() {
+    msg.textContent = "";
+    statusEl.textContent = "Loading...";
+    try {
+      const res = await apiFetch("/api/v1/billing/status", { cache: "no-store" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to load billing status");
+      }
+      const data = await res.json();
+      statusEl.textContent = `Status: ${data.status} | Plan: ${data.plan} | Customer linked: ${data.has_customer ? "yes" : "no"}`;
+    } catch (err) {
+      statusEl.textContent = "";
+      msg.textContent = (err && err.message) ? err.message : "Billing status unavailable";
+    }
+  }
+
+  async function startCheckout() {
+    msg.textContent = "Creating checkout session...";
+    try {
+      const plan = planSelect && planSelect.value ? planSelect.value : "agency";
+      const res = await apiFetch(`/api/v1/billing/checkout?plan=${encodeURIComponent(plan)}`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Checkout failed");
+      if (!data.checkout_url) throw new Error("No checkout URL returned");
+      window.location.href = data.checkout_url;
+    } catch (err) {
+      msg.textContent = (err && err.message) ? err.message : "Checkout failed";
+    }
+  }
+
+  async function openPortal() {
+    msg.textContent = "Opening customer portal...";
+    try {
+      const res = await apiFetch("/api/v1/billing/portal", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Portal unavailable");
+      if (!data.portal_url) throw new Error("No portal URL returned");
+      window.location.href = data.portal_url;
+    } catch (err) {
+      msg.textContent = (err && err.message) ? err.message : "Portal unavailable";
+    }
+  }
+
+  if (checkoutBtn) checkoutBtn.addEventListener("click", startCheckout);
+  if (portalBtn) portalBtn.addEventListener("click", openPortal);
+  if (refreshBtn) refreshBtn.addEventListener("click", refreshStatus);
+  refreshStatus();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const page = (document.body && document.body.dataset && document.body.dataset.page) ? document.body.dataset.page : "";
   if (page === "login") onLoginPage();
@@ -448,4 +506,5 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "appointments") onAppointmentsPage();
   if (page === "audit") onAuditPage();
   if (page === "register") onRegisterPage();
+  if (page === "billing") onBillingPage();
 });

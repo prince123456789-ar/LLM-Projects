@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
     STRIPE_PRICE_ID: str = ""
+    # Optional plan-specific Stripe Price IDs (recommended).
+    STRIPE_PRICE_ID_AGENCY: str = ""
+    STRIPE_PRICE_ID_PRO: str = ""
     STRIPE_SUCCESS_URL: str = "http://localhost:3000/billing/success"
     STRIPE_CANCEL_URL: str = "http://localhost:3000/billing/cancel"
 
