@@ -68,7 +68,8 @@ class Settings(BaseSettings):
 
     # API keys / plans
     API_KEY_PREFIX: str = "rea_"
-    EMBED_KEY_PREFIX: str = "rep_"
+    # Public key used for website embed. This is safe to place in a script URL.
+    EMBED_KEY_PREFIX: str = "rea_pub_"
 
     LOGIN_MAX_ATTEMPTS: int = 5
     LOGIN_LOCK_MINUTES: int = 15
