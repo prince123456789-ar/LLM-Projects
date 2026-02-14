@@ -20,6 +20,16 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class MeResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    role: UserRole
+
+    class Config:
+        from_attributes = True
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str

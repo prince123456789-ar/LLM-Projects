@@ -27,7 +27,7 @@ from app.core.security import (
 )
 from app.models.user import User
 from app.models.user import UserRole
-from app.schemas.auth import RefreshTokenRequest, RevokeSessionRequest, TokenResponse, UserCreate, UserResponse
+from app.schemas.auth import MeResponse, RefreshTokenRequest, RevokeSessionRequest, TokenResponse, UserCreate, UserResponse
 from app.services.audit import audit_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -147,6 +147,11 @@ def revoke_sessions(
     current_user.session_version += 1
     db.commit()
     return {"status": "revoked"}
+
+
+@router.get("/me", response_model=MeResponse)
+def me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 
 @router.get("/google/login")

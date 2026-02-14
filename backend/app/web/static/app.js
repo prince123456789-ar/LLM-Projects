@@ -24,6 +24,12 @@ async function login(email, password) {
   return data;
 }
 
+async function getMe() {
+  const res = await apiFetch("/api/v1/auth/me", { cache: "no-store" });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 async function refreshTokens() {
   const refresh = localStorage.getItem("refresh_token") || "";
   if (!refresh) throw new Error("No refresh token");
@@ -100,8 +106,10 @@ function onLoginPage() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       await login(email, password);
+      const me = await getMe();
       msg.textContent = "Signed in. Redirecting...";
-      window.location.href = "/app/dashboard";
+      if (me && me.role === "admin") window.location.href = "/app/admin";
+      else window.location.href = "/app/dashboard";
     } catch (err) {
       msg.textContent = (err && err.message) ? err.message : "Sign in failed";
     }
@@ -567,6 +575,62 @@ async function onResetPasswordPage() {
   });
 }
 
+function renderUsers(rows) {
+  const tbody = document.querySelector("#usersTable tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  rows.forEach((u) => {
+    const tr = document.createElement("tr");
+    const locked = u.locked_until ? "yes" : "";
+    const active = u.is_active ? "yes" : "no";
+    tr.innerHTML =
+      "<td>" + u.id + "</td>" +
+      "<td>" + (u.email || "") + "</td>" +
+      "<td>" + (u.full_name || "") + "</td>" +
+      "<td>" + (u.role || "") + "</td>" +
+      "<td>" + active + "</td>" +
+      "<td>" + locked + "</td>" +
+      "<td><button class=\"btn\" data-disable=\"" + u.id + "\">Disable</button></td>";
+    tbody.appendChild(tr);
+  });
+}
+
+async function onAdminPage() {
+  const msg = document.getElementById("adminMsg");
+  const btn = document.getElementById("refreshUsers");
+
+  async function load() {
+    msg.textContent = "Loading...";
+    try {
+      const res = await apiFetch("/api/v1/admin/users", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || "Failed to load users");
+      renderUsers(data || []);
+      msg.textContent = "Loaded " + (data ? data.length : 0) + " users.";
+    } catch (err) {
+      msg.textContent = (err && err.message) ? err.message : "Admin access required";
+    }
+  }
+
+  document.addEventListener("click", async (e) => {
+    const t = e.target;
+    if (t && t.dataset && t.dataset.disable) {
+      msg.textContent = "Disabling user...";
+      try {
+        const res = await apiFetch(`/api/v1/admin/users/${encodeURIComponent(t.dataset.disable)}/disable`, { method: "POST" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Disable failed");
+        await load();
+      } catch (err) {
+        msg.textContent = (err && err.message) ? err.message : "Disable failed";
+      }
+    }
+  });
+
+  if (btn) btn.addEventListener("click", load);
+  load();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const page = (document.body && document.body.dataset && document.body.dataset.page) ? document.body.dataset.page : "";
   if (page === "login") onLoginPage();
@@ -579,4 +643,5 @@ document.addEventListener("DOMContentLoaded", () => {
   if (page === "billing") onBillingPage();
   if (page === "forgot") onForgotPasswordPage();
   if (page === "reset") onResetPasswordPage();
+  if (page === "admin") onAdminPage();
 });

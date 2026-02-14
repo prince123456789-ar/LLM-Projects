@@ -171,5 +171,9 @@ def ui_settings():
 def ui_audit():
     return _page("app-audit.html")
 
+@app.get("/app/admin", include_in_schema=False)
+def ui_admin():
+    return _page("app-admin.html")
+
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
