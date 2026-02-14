@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     # Frontend proxy target for single-origin browser traffic.
     BACKEND_INTERNAL_URL: str = "http://localhost:8000"
 
+    # OAuth providers
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_OAUTH_REDIRECT_URI: str = ""
+
     # Crypto-agility switch to rotate algorithms/keys without code change.
     ZERO_TRUST_SIGNING_ALG: str = "HS512"
 

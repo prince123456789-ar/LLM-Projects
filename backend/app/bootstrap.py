@@ -1,3 +1,5 @@
+import os
+
 from app.core.database import SessionLocal
 from app.core.security import get_password_hash
 from app.models.user import User, UserRole
@@ -26,6 +28,10 @@ def create_user(email: str, full_name: str, password: str, role: UserRole) -> No
 
 
 if __name__ == "__main__":
-    create_user("admin@agency.com", "Agency Admin", "Admin@12345!secure", UserRole.admin)
-    create_user("manager@agency.com", "Agency Manager", "Manager@12345!secure", UserRole.manager)
-    create_user("agent@agency.com", "Agent One", "Agent@12345!secure", UserRole.agent)
+    # Do not hardcode credentials in the repo. Use env vars for local bootstrap.
+    admin_email = os.getenv("BOOTSTRAP_ADMIN_EMAIL")
+    admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD")
+    if admin_email and admin_password:
+        create_user(admin_email, "Agency Admin", admin_password, UserRole.admin)
+    else:
+        print("Bootstrap skipped. Set BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD to create an admin user.")

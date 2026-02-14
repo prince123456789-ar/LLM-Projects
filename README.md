@@ -18,10 +18,16 @@ Copy-Item saas/.env.example saas/.env -Force
 Copy-Item saas/.env saas/backend/.env -Force
 ```
 
-3. Start the app (UI + API) and seed demo users:
+3. Start the app (UI + API) and (optionally) bootstrap an admin user:
 
 ```powershell
-PowerShell -NoProfile -ExecutionPolicy Bypass -File saas/scripts/start-local.ps1 -SeedDemoUsers
+PowerShell -NoProfile -ExecutionPolicy Bypass -File saas/scripts/start-local.ps1
+```
+
+Optional: create an initial admin user (recommended):
+
+```powershell
+PowerShell -NoProfile -ExecutionPolicy Bypass -File saas/scripts/start-local.ps1 -SeedDemoUsers -BootstrapAdminEmail "you@example.com" -BootstrapAdminPassword "UseA_Long_Random_Password_123!"
 ```
 
 Open:
@@ -30,11 +36,7 @@ Open:
 - Health: `http://127.0.0.1:8000/health`
 - API base: `http://127.0.0.1:8000/api/v1`
 
-Demo users (seeded by `saas/backend/app/bootstrap.py`):
-
-- `admin@agency.com` / `Admin@12345!secure`
-- `manager@agency.com` / `Manager@12345!secure`
-- `agent@agency.com` / `Agent@12345!secure`
+For security, the repo does not ship hardcoded admin emails/passwords.
 
 ## Notes
 

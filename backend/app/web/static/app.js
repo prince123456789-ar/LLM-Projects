@@ -67,6 +67,26 @@ function onLoginPage() {
   const logoutBtn = document.getElementById("logoutBtn");
   if (!form) return;
 
+  // OAuth callback token handoff (URL fragment, never sent to server).
+  try {
+    if (window.location.hash && window.location.hash.includes("access_token=")) {
+      const h = window.location.hash.replace(/^#/, "");
+      const params = new URLSearchParams(h);
+      const access = params.get("access_token");
+      const refresh = params.get("refresh_token");
+      const device = params.get("device_id");
+      const next = params.get("next") || "/app/dashboard";
+      if (access && refresh) {
+        localStorage.setItem("token", access);
+        localStorage.setItem("refresh_token", refresh);
+      }
+      if (device) localStorage.setItem("device_id", device);
+      window.location.hash = "";
+      window.location.href = next;
+      return;
+    }
+  } catch (_) {}
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     msg.textContent = "Signing in...";
@@ -246,12 +266,145 @@ async function onAppointmentsPage() {
   loadSlots();
 }
 
+function drawLineChart(canvas, series) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const w = canvas.width, h = canvas.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const pad = 18;
+  const innerW = w - pad * 2;
+  const innerH = h - pad * 2;
+
+  const vals = series.map((p) => p.value);
+  const minV = Math.min.apply(null, vals.concat([0]));
+  const maxV = Math.max.apply(null, vals.concat([1]));
+
+  function x(i) {
+    const t = series.length <= 1 ? 0 : i / (series.length - 1);
+    return pad + t * innerW;
+  }
+  function y(v) {
+    const t = (v - minV) / (maxV - minV || 1);
+    return pad + (1 - t) * innerH;
+  }
+
+  // Grid
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const yy = pad + (innerH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad, yy);
+    ctx.lineTo(pad + innerW, yy);
+    ctx.stroke();
+  }
+
+  // Line
+  ctx.strokeStyle = "rgba(88,240,194,.95)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  series.forEach((p, i) => {
+    const xx = x(i);
+    const yy = y(p.value);
+    if (i === 0) ctx.moveTo(xx, yy);
+    else ctx.lineTo(xx, yy);
+  });
+  ctx.stroke();
+
+  // Fill
+  const grad = ctx.createLinearGradient(0, pad, 0, pad + innerH);
+  grad.addColorStop(0, "rgba(88,240,194,.20)");
+  grad.addColorStop(1, "rgba(88,240,194,0)");
+  ctx.fillStyle = grad;
+  ctx.lineTo(pad + innerW, pad + innerH);
+  ctx.lineTo(pad, pad + innerH);
+  ctx.closePath();
+  ctx.fill();
+
+  // Labels
+  ctx.fillStyle = "rgba(234,240,255,.70)";
+  ctx.font = "12px ui-monospace, Menlo, Consolas, monospace";
+  ctx.fillText(String(maxV.toFixed(0)), pad, pad + 10);
+  ctx.fillText(String(minV.toFixed(0)), pad, pad + innerH);
+}
+
+async function onDashboardChart() {
+  const msg = document.getElementById("chartMsg");
+  const btn = document.getElementById("refreshChart");
+  const canvas = document.getElementById("kpiChart");
+
+  async function load() {
+    msg.textContent = "Loading...";
+    try {
+      const m = await (await apiFetch("/api/v1/analytics/dashboard", { cache: "no-store" })).json();
+      setText("mTotal", String(m.total_leads ?? "-"));
+      setText("mScore", String(m.avg_lead_score ?? "-"));
+      setText("mConv", String(m.conversion_rate ?? "-") + "%");
+      setText("mMrr", "$" + String(m.mrr_usd ?? 0));
+      setText("mProfit", "$" + String(m.profit_usd ?? 0));
+      setText("mLoss", "$" + String(m.losses_usd ?? 0));
+
+      const res = await apiFetch("/api/v1/analytics/timeseries?days=30", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load chart");
+      const data = await res.json();
+      const series = (data || []).map((p) => ({ label: p.day, value: Number(p.profit_usd || 0) }));
+      drawLineChart(canvas, series.length ? series : [{ label: "0", value: 0 }]);
+      msg.textContent = "Updated.";
+    } catch (err) {
+      msg.textContent = "Login required (or API not ready).";
+    }
+  }
+
+  if (btn) btn.addEventListener("click", load);
+  load();
+}
+
+function renderAudit(rows) {
+  const tbody = document.querySelector("#auditTable tbody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  rows.forEach((a) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + (a.created_at || "") + "</td>" +
+      "<td>" + (a.action || "") + "</td>" +
+      "<td>" + (a.resource || "") + "</td>" +
+      "<td>" + (a.user_id == null ? "" : String(a.user_id)) + "</td>" +
+      "<td>" + (a.details || "") + "</td>";
+    tbody.appendChild(tr);
+  });
+}
+
+async function onAuditPage() {
+  const msg = document.getElementById("auditMsg");
+  const btn = document.getElementById("refreshAudit");
+
+  async function load() {
+    msg.textContent = "Loading...";
+    try {
+      const res = await apiFetch("/api/v1/audit?limit=100", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load audit log");
+      const data = await res.json();
+      renderAudit(data || []);
+      msg.textContent = "Loaded " + (data ? data.length : 0) + " events.";
+    } catch (err) {
+      msg.textContent = "Login required (admin/manager) or API not ready.";
+    }
+  }
+
+  if (btn) btn.addEventListener("click", load);
+  load();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const page = window.__PAGE__ || "";
+  const page = (document.body && document.body.dataset && document.body.dataset.page) ? document.body.dataset.page : "";
   if (page === "login") onLoginPage();
-  if (page === "dashboard") onDashboardPage();
+  if (page === "dashboard") { onDashboardPage(); onDashboardChart(); }
   if (page === "leads") onLeadsPage();
   if (page === "integrations") onIntegrationsPage();
   if (page === "appointments") onAppointmentsPage();
+  if (page === "audit") onAuditPage();
 });
-

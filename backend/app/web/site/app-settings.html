@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Billing | RealEstateAI</title>
+    <title>Settings | RealEstateAI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,650&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/app.css" />
   </head>
-  <body data-page="billing">
+  <body data-page="settings">
     <header class="topbar">
       <a class="brand" href="/"><span class="brand-mark">RE</span><span class="brand-name">RealEstateAI</span></a>
       <nav class="nav">
@@ -17,7 +17,8 @@
         <a href="/app/leads">Leads</a>
         <a href="/app/integrations">Integrations</a>
         <a href="/app/appointments">Appointments</a>
-        <a href="/app/billing">Billing</a>
+        <a href="/app/audit">Audit</a>
+        <a href="/app/settings">Settings</a>
         <a class="pill" href="/app/login">Account</a>
       </nav>
     </header>
@@ -25,18 +26,35 @@
     <main class="page">
       <section class="page-inner">
         <div class="app-header">
-          <h1 class="page-title">Billing</h1>
+          <h1 class="page-title">Security & Workspace Settings</h1>
           <div class="row">
-            <a class="btn" href="/pricing">Pricing</a>
             <a class="btn ghost" href="/app/login">Account</a>
           </div>
         </div>
 
-        <section class="card">
-          <h3>Stripe</h3>
-          <p class="muted">Configure your Stripe keys in <code>saas/.env</code> to enable checkout and webhooks.</p>
-          <div class="muted small">This starter keeps billing endpoints behind the API; this page is the UI entry point.</div>
-        </section>
+        <div class="grid-2">
+          <section class="card">
+            <h3>Recommended security</h3>
+            <ul class="list">
+              <li>Enable Google OAuth (SSO) for admins/managers</li>
+              <li>Use long secrets for JWT + session middleware</li>
+              <li>Keep API docs disabled in production</li>
+              <li>Rotate integration tokens regularly</li>
+              <li>Least-privilege roles for agents</li>
+            </ul>
+            <p class="muted small">This project follows OWASP-style basics: RBAC, rate limiting, strict CSP, and audit logging.</p>
+          </section>
+          <section class="card">
+            <h3>Enterprise features (typical SaaS)</h3>
+            <ul class="list">
+              <li>Team invites and SCIM (future)</li>
+              <li>2FA / WebAuthn (future)</li>
+              <li>API keys + webhooks (future)</li>
+              <li>Custom fields, tags, saved views (future)</li>
+              <li>Data retention controls and exports</li>
+            </ul>
+          </section>
+        </div>
       </section>
     </main>
 
@@ -50,3 +68,4 @@
     <script src="/static/app.js" defer></script>
   </body>
 </html>
+

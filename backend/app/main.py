@@ -109,5 +109,14 @@ def ui_appointments():
 def ui_billing():
     return _page("app-billing.html")
 
+@app.get("/app/settings", include_in_schema=False)
+def ui_settings():
+    return _page("app-settings.html")
+
+
+@app.get("/app/audit", include_in_schema=False)
+def ui_audit():
+    return _page("app-audit.html")
+
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

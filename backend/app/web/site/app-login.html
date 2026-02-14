@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,650&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/app.css" />
   </head>
-  <body>
+  <body data-page="login">
     <header class="topbar">
       <a class="brand" href="/"><span class="brand-mark">RE</span><span class="brand-name">RealEstateAI</span></a>
       <nav class="nav">
@@ -26,18 +26,14 @@
           <aside class="side">
             <h2 class="side-title">Sign in</h2>
             <p class="muted">Use your agency credentials to access the dashboard.</p>
-            <div class="muted small">
-              Local demo users (after running bootstrap):
-              <div><code>admin@agency.com</code> / <code>Admin@12345!secure</code></div>
-              <div><code>manager@agency.com</code> / <code>Manager@12345!secure</code></div>
-              <div><code>agent@agency.com</code> / <code>Agent@12345!secure</code></div>
-            </div>
+            <p class="muted small">For security, this UI never displays admin emails or passwords.</p>
           </aside>
           <section class="card app-card">
             <form id="loginForm" class="grid">
               <input id="email" type="email" placeholder="Email" autocomplete="username" required />
               <input id="password" type="password" placeholder="Password" autocomplete="current-password" required />
               <button class="btn primary" type="submit">Sign in</button>
+              <a class="btn" href="/api/v1/auth/google/login">Continue with Google</a>
               <div id="loginMsg" class="muted small"></div>
             </form>
             <div class="row">
@@ -56,8 +52,6 @@
       </div>
     </footer>
 
-    <script>window.__PAGE__ = "login";</script>
     <script src="/static/app.js" defer></script>
   </body>
 </html>
-

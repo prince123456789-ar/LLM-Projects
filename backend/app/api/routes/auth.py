@@ -1,6 +1,15 @@
 from datetime import datetime, timedelta, timezone
 
+import base64
+import hashlib
+import hmac
+import secrets
+from urllib.parse import urlencode
+
+import requests
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -17,6 +26,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.models.user import UserRole
 from app.schemas.auth import RefreshTokenRequest, RevokeSessionRequest, TokenResponse, UserCreate, UserResponse
 from app.services.audit import audit_event
 
@@ -137,3 +147,103 @@ def revoke_sessions(
     current_user.session_version += 1
     db.commit()
     return {"status": "revoked"}
+
+
+@router.get("/google/login")
+def google_login(request: Request):
+    """Start Google OAuth login (no extra dependencies)."""
+    settings = get_settings()
+    if not settings.GOOGLE_OAUTH_CLIENT_ID or not settings.GOOGLE_OAUTH_CLIENT_SECRET or not settings.GOOGLE_OAUTH_REDIRECT_URI:
+        raise HTTPException(status_code=503, detail="Google OAuth not configured")
+
+    state = secrets.token_urlsafe(24)
+    mac = hmac.new(settings.SECRET_KEY.encode("utf-8"), state.encode("utf-8"), hashlib.sha256).digest()
+    signed = state + "." + base64.urlsafe_b64encode(mac).decode("ascii").rstrip("=")
+
+    params = {
+        "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
+        "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+    resp = RedirectResponse(url=url)
+    resp.set_cookie("oauth_state", signed, httponly=True, samesite="lax", secure=False, max_age=600)
+    return resp
+
+
+@router.get("/google/callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    settings = get_settings()
+    if not settings.GOOGLE_OAUTH_CLIENT_ID or not settings.GOOGLE_OAUTH_CLIENT_SECRET or not settings.GOOGLE_OAUTH_REDIRECT_URI:
+        raise HTTPException(status_code=503, detail="Google OAuth not configured")
+
+    code = request.query_params.get("code")
+    state = request.query_params.get("state")
+    cookie = request.cookies.get("oauth_state") or ""
+    if not code or not state or "." not in cookie:
+        raise HTTPException(status_code=400, detail="Google login failed")
+
+    st, sig = cookie.split(".", 1)
+    mac = hmac.new(settings.SECRET_KEY.encode("utf-8"), st.encode("utf-8"), hashlib.sha256).digest()
+    expected = base64.urlsafe_b64encode(mac).decode("ascii").rstrip("=")
+    if not hmac.compare_digest(sig, expected) or st != state:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state")
+
+    token_res = requests.post(
+        "https://oauth2.googleapis.com/token",
+        data={
+            "code": code,
+            "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
+            "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
+            "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        },
+        timeout=15,
+    )
+    if token_res.status_code >= 400:
+        raise HTTPException(status_code=400, detail="Google token exchange failed")
+    token_json = token_res.json()
+    access_token = token_json.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Google token exchange failed")
+
+    ui_res = requests.get(
+        "https://openidconnect.googleapis.com/v1/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=15,
+    )
+    if ui_res.status_code >= 400:
+        raise HTTPException(status_code=400, detail="Google userinfo failed")
+    userinfo = ui_res.json()
+    email = userinfo.get("email")
+    name = userinfo.get("name") or "Google User"
+    if not email:
+        raise HTTPException(status_code=400, detail="Google login failed")
+
+    # Auto-provision user (manager role) if public signup allowed; otherwise require existing account.
+    existing = db.query(User).filter(User.email == email).first()
+    if not existing:
+        if not settings.ALLOW_PUBLIC_SIGNUP:
+            raise HTTPException(status_code=403, detail="Account not found")
+        existing = User(
+            full_name=name,
+            email=email,
+            hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+            role=UserRole.manager,
+        )
+        db.add(existing)
+        db.commit()
+        db.refresh(existing)
+
+    # Create tokens and pass them via URL fragment (not sent to server) for the UI to store.
+    device_id = secrets.token_hex(16)
+    access = create_access_token(str(existing.id), device_id, existing.session_version)
+    refresh = create_refresh_token(str(existing.id), device_id, existing.session_version)
+    url = f"{settings.FRONTEND_URL}/app/login#access_token={access}&refresh_token={refresh}&device_id={device_id}&next=/app/dashboard"
+    resp = RedirectResponse(url=url)
+    resp.delete_cookie("oauth_state")
+    return resp

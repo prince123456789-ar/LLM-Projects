@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Billing | RealEstateAI</title>
+    <title>Audit | RealEstateAI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,650&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/app.css" />
   </head>
-  <body data-page="billing">
+  <body data-page="audit">
     <header class="topbar">
       <a class="brand" href="/"><span class="brand-mark">RE</span><span class="brand-name">RealEstateAI</span></a>
       <nav class="nav">
@@ -17,7 +17,8 @@
         <a href="/app/leads">Leads</a>
         <a href="/app/integrations">Integrations</a>
         <a href="/app/appointments">Appointments</a>
-        <a href="/app/billing">Billing</a>
+        <a href="/app/audit">Audit</a>
+        <a href="/app/settings">Settings</a>
         <a class="pill" href="/app/login">Account</a>
       </nav>
     </header>
@@ -25,17 +26,24 @@
     <main class="page">
       <section class="page-inner">
         <div class="app-header">
-          <h1 class="page-title">Billing</h1>
+          <h1 class="page-title">Audit Log</h1>
           <div class="row">
-            <a class="btn" href="/pricing">Pricing</a>
-            <a class="btn ghost" href="/app/login">Account</a>
+            <button class="btn" id="refreshAudit" type="button">Refresh</button>
           </div>
         </div>
 
         <section class="card">
-          <h3>Stripe</h3>
-          <p class="muted">Configure your Stripe keys in <code>saas/.env</code> to enable checkout and webhooks.</p>
-          <div class="muted small">This starter keeps billing endpoints behind the API; this page is the UI entry point.</div>
+          <div class="table-wrap">
+            <table class="table" id="auditTable">
+              <thead>
+                <tr>
+                  <th>Time</th><th>Action</th><th>Resource</th><th>User</th><th>Details</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="auditMsg" class="muted small"></div>
         </section>
       </section>
     </main>
@@ -50,3 +58,4 @@
     <script src="/static/app.js" defer></script>
   </body>
 </html>
+
