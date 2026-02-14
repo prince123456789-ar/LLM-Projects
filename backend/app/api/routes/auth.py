@@ -7,6 +7,7 @@ import secrets
 from urllib.parse import urlencode
 
 import requests
+from requests import exceptions as req_exc
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -181,7 +182,15 @@ def google_login(request: Request):
     }
     url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
     resp = RedirectResponse(url=url)
-    resp.set_cookie("oauth_state", signed, httponly=True, samesite="lax", secure=False, max_age=600)
+    # Secure cookies on HTTPS so the state can't leak over cleartext.
+    resp.set_cookie(
+        "oauth_state",
+        signed,
+        httponly=True,
+        samesite="lax",
+        secure=(request.url.scheme == "https"),
+        max_age=600,
+    )
     return resp
 
 
@@ -203,32 +212,56 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     if not hmac.compare_digest(sig, expected) or st != state:
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
 
-    token_res = requests.post(
-        "https://oauth2.googleapis.com/token",
-        data={
-            "code": code,
-            "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
-            "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
-            "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
-            "grant_type": "authorization_code",
-        },
-        timeout=15,
-    )
+    # Robust network handling: some Windows environments intermittently fail TLS handshakes
+    # due to antivirus/proxy SSL inspection. Retry a couple times before failing.
+    sess = requests.Session()
+    token_res = None
+    last_err: Exception | None = None
+    for _ in range(3):
+        try:
+            token_res = sess.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
+                    "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
+                    "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+                    "grant_type": "authorization_code",
+                },
+                timeout=20,
+            )
+            last_err = None
+            break
+        except (req_exc.SSLError, req_exc.ConnectionError, req_exc.Timeout) as e:
+            last_err = e
+            continue
+    if token_res is None:
+        audit_event(db, "google_oauth_network_error", "auth", user_id=None, details=type(last_err).__name__ if last_err else "unknown")
+        raise HTTPException(status_code=502, detail="Google OAuth network/TLS error. Check firewall/antivirus SSL inspection and retry.")
     if token_res.status_code >= 400:
         raise HTTPException(status_code=400, detail="Google token exchange failed")
-    token_json = token_res.json()
+    try:
+        token_json = token_res.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Google token exchange failed")
     access_token = token_json.get("access_token")
     if not access_token:
         raise HTTPException(status_code=400, detail="Google token exchange failed")
 
-    ui_res = requests.get(
-        "https://openidconnect.googleapis.com/v1/userinfo",
-        headers={"Authorization": f"Bearer {access_token}"},
-        timeout=15,
-    )
+    try:
+        ui_res = sess.get(
+            "https://openidconnect.googleapis.com/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=20,
+        )
+    except (req_exc.RequestException, Exception):
+        raise HTTPException(status_code=502, detail="Google userinfo request failed")
     if ui_res.status_code >= 400:
         raise HTTPException(status_code=400, detail="Google userinfo failed")
-    userinfo = ui_res.json()
+    try:
+        userinfo = ui_res.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Google userinfo failed")
     email = userinfo.get("email")
     name = userinfo.get("name") or "Google User"
     if not email:
