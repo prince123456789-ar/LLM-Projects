@@ -655,20 +655,12 @@ async function loadEmbedKey() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || ("Failed to load widget key (" + res.status + ")"));
     maskedEl.textContent = data.masked_key || "-";
+
+    // Store real snippet for copy, and also show real snippet as requested.
     window.__reaiEmbedSnippet = String(data.install_snippet || "");
-    // Show masked text but keep full URL in href so the user can copy it.
-    let maskedUrlText = data.install_script_url || "-";
-    try {
-      const u = new URL(String(data.install_script_url || ""));
-      if (u.searchParams.get("key")) u.searchParams.set("key", "****");
-      maskedUrlText = u.toString();
-    } catch (_) {}
-    linkEl.textContent = maskedUrlText;
+    linkEl.textContent = String(data.install_script_url || "-");
     linkEl.href = data.install_script_url || "#";
-    // Mask snippet in UI to avoid showing full key on screen.
-    let maskedSnippet = String(data.install_snippet || "");
-    maskedSnippet = maskedSnippet.replace(/key=[^\"'\\s>]+/g, "key=****");
-    snippetEl.textContent = maskedSnippet;
+    snippetEl.textContent = String(data.install_snippet || "");
     if (msgEl) msgEl.textContent = "Ready. Paste the snippet into your website <head> or before </body>.";
   } catch (err) {
     if (msgEl) msgEl.textContent = (err && err.message) ? err.message : "Login required (or API not ready).";

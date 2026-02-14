@@ -47,7 +47,13 @@ def _ensure_primary_key(db: Session, user: User, request: Request) -> tuple[Embe
     if row:
         try:
             plain = f.decrypt(row.token_enc.encode("utf-8")).decode("utf-8")
-            return row, plain
+            # If we changed the prefix format, rotate old keys automatically.
+            if not plain.startswith(settings.EMBED_KEY_PREFIX):
+                row.revoked_at = datetime.now(timezone.utc).replace(tzinfo=None)
+                db.commit()
+                row = None
+            else:
+                return row, plain
         except Exception:
             # If decrypt fails (key rotated), rotate automatically.
             row.revoked_at = datetime.now(timezone.utc).replace(tzinfo=None)

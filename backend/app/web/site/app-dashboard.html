@@ -96,18 +96,20 @@
           <p class="muted small">
             Install a lightweight lead capture widget on your website. The dashboard shows the key masked, but the install link and snippet include it.
           </p>
-          <div class="grid-3" style="margin-top:12px">
-            <div class="card metric" style="box-shadow:none">
+          <div class="grid-2" style="margin-top:12px">
+            <div class="card" style="box-shadow:none">
               <div class="muted small">API Public Key (masked)</div>
-              <div id="embedKeyMasked" class="metric-value">-</div>
+              <div id="embedKeyMasked" class="metric-value" style="margin-top:6px">-</div>
+              <div style="height:10px"></div>
+              <div class="muted small">Install link (contains key)</div>
+              <a id="embedInstallLink" class="codebox wrap-anywhere" href="#" target="_blank" rel="noopener" style="display:block;margin-top:10px">-</a>
             </div>
-            <div class="card metric" style="box-shadow:none">
-              <div class="muted small">Install link</div>
-              <div class="muted small"><a id="embedInstallLink" href="#" target="_blank" rel="noopener">-</a></div>
-            </div>
-            <div class="card metric" style="box-shadow:none">
-              <div class="muted small">Snippet</div>
-              <pre id="embedSnippet" class="codebox" style="margin:0;white-space:pre-wrap"></pre>
+            <div class="card" style="box-shadow:none">
+              <div class="muted small">JS embed snippet (contains key)</div>
+              <pre id="embedSnippet" class="codebox wrap-anywhere" style="margin-top:10px;white-space:pre-wrap"></pre>
+              <div class="muted small" style="margin-top:10px">
+                Example: <code>&lt;script src="https://YOUR-DOMAIN/embed.js?key=YOUR_KEY" async&gt;&lt;/script&gt;</code>
+              </div>
             </div>
           </div>
           <div id="embedMsg" class="muted small"></div>
