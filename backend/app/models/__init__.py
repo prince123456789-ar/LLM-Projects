@@ -9,6 +9,7 @@ from app.models.billing import BillingSubscription, SubscriptionPlan, Subscripti
 from app.models.api_key import ApiKey
 from app.models.password_reset import PasswordResetToken
 from app.models.embed_key import EmbedKey
+from app.models.embed_chat import EmbedConversation, EmbedMessage, EmbedMessageRole
 
 __all__ = [
     "User",
@@ -31,4 +32,7 @@ __all__ = [
     "ApiKey",
     "PasswordResetToken",
     "EmbedKey",
+    "EmbedConversation",
+    "EmbedMessage",
+    "EmbedMessageRole",
 ]

@@ -36,13 +36,23 @@ def forgot_password(payload: ForgotPasswordRequest, request: Request, db: Sessio
     db.commit()
 
     reset_url = f"{settings.FRONTEND_URL}/app/reset-password?token={token}"
+    subject = f"{settings.PROJECT_NAME} password reset request"
     body = (
-        "You requested a password reset.\n\n"
-        f"Reset link (expires in {settings.PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes):\n{reset_url}\n\n"
-        "If you did not request this, you can ignore this email."
+        f"Hello,\n\n"
+        f"We received a request to reset the password for your {settings.PROJECT_NAME} account.\n\n"
+        f"Reset link (expires in {settings.PASSWORD_RESET_TOKEN_TTL_MINUTES} minutes):\n"
+        f"{reset_url}\n\n"
+        "Security tips:\n"
+        "- This link works only once and expires automatically.\n"
+        "- If you did not request this reset, do not click the link. Your account remains secure.\n"
+        "- If you keep receiving these emails, consider changing your email password and enabling additional protections.\n\n"
+        "Why you received this email:\n"
+        "Someone entered your email address in the password reset form. We do not reveal whether an email exists in our system.\n\n"
+        "Thanks,\n"
+        f"{settings.PROJECT_NAME} Security\n"
     )
     try:
-        send_email(user.email, "Reset your password", body)
+        send_email(user.email, subject, body)
     except Exception:
         # Do not leak SMTP details to client.
         audit_event(db, "password_reset_email_failed", "auth", user_id=user.id, details="smtp_error")

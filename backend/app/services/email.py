@@ -20,4 +20,3 @@ def send_email(to_email: str, subject: str, body: str) -> None:
             server.starttls()
         server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
         server.send_message(msg)
-

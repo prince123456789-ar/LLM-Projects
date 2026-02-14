@@ -98,14 +98,17 @@
           </p>
           <div class="grid-2" style="margin-top:12px">
             <div class="card" style="box-shadow:none">
-              <div class="muted small">API Public Key (masked)</div>
-              <div id="embedKeyMasked" class="metric-value" style="margin-top:6px">-</div>
+              <div class="muted small">API Public Key</div>
+              <div class="row space" style="margin-top:6px">
+                <div id="embedKeyMasked" class="metric-value">-</div>
+                <button class="btn" id="copyEmbedKey" type="button">Copy key</button>
+              </div>
               <div style="height:10px"></div>
-              <div class="muted small">Install link (contains key)</div>
+              <div class="muted small">Install link</div>
               <a id="embedInstallLink" class="codebox wrap-anywhere" href="#" target="_blank" rel="noopener" style="display:block;margin-top:10px">-</a>
             </div>
             <div class="card" style="box-shadow:none">
-              <div class="muted small">JS embed snippet (contains key)</div>
+              <div class="muted small">JS embed snippet</div>
               <pre id="embedSnippet" class="codebox wrap-anywhere" style="margin-top:10px;white-space:pre-wrap"></pre>
               <div class="muted small" style="margin-top:10px">
                 Example: <code>&lt;script src="https://YOUR-DOMAIN/embed.js?key=YOUR_KEY" async&gt;&lt;/script&gt;</code>

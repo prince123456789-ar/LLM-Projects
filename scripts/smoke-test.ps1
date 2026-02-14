@@ -151,6 +151,14 @@ try {
       referrer = "https://example.com/"
     }
     Show-Result "embed/leads" $embed
+
+    $chat = Invoke-Json "POST" "$BaseUrl/api/v1/embed/chat/message?key=$([uri]::EscapeDataString($k))" @{ "Origin" = "https://example.com" } @{
+      conversation_id = $null
+      message = "I'm looking for an apartment in Downtown with budget 250000"
+      page_url = "https://example.com/"
+      referrer = "https://example.com/"
+    }
+    Show-Result "embed/chat/message" $chat
   } else {
     Write-Host "[FAIL] embed/leads missing key"
   }

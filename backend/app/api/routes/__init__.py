@@ -1,4 +1,4 @@
-from app.api.routes import admin, analytics, api_keys, appointments, audit, auth, billing, embed, integrations, leads, password_reset, properties, reports
+from app.api.routes import admin, analytics, api_keys, appointments, audit, auth, billing, embed, embed_chat, integrations, leads, password_reset, properties, reports
 
 __all__ = [
     "auth",
@@ -13,5 +13,6 @@ __all__ = [
     "api_keys",
     "password_reset",
     "embed",
+    "embed_chat",
     "admin",
 ]

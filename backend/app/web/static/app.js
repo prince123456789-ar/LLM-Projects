@@ -658,6 +658,13 @@ async function loadEmbedKey() {
 
     // Store real snippet for copy, and also show real snippet as requested.
     window.__reaiEmbedSnippet = String(data.install_snippet || "");
+    window.__reaiEmbedInstallUrl = String(data.install_script_url || "");
+    // Try to extract the real key from the URL (so "Copy key" can copy the full value).
+    window.__reaiEmbedKey = "";
+    try {
+      const u = new URL(window.__reaiEmbedInstallUrl);
+      window.__reaiEmbedKey = u.searchParams.get("key") || "";
+    } catch (_) {}
     linkEl.textContent = String(data.install_script_url || "-");
     linkEl.href = data.install_script_url || "#";
     snippetEl.textContent = String(data.install_snippet || "");
@@ -670,6 +677,7 @@ async function loadEmbedKey() {
 function onDashboardWidget() {
   const btn = document.getElementById("refreshEmbedKey");
   const copyBtn = document.getElementById("copyEmbedSnippet");
+  const copyKeyBtn = document.getElementById("copyEmbedKey");
   if (btn) btn.addEventListener("click", loadEmbedKey);
   if (copyBtn) copyBtn.addEventListener("click", async () => {
     const msgEl = document.getElementById("embedMsg");
@@ -694,6 +702,31 @@ function onDashboardWidget() {
       if (msgEl) msgEl.textContent = "Snippet copied.";
     } catch (e) {
       if (msgEl) msgEl.textContent = "Copy failed. Open the install link and copy from the address bar.";
+    }
+  });
+  if (copyKeyBtn) copyKeyBtn.addEventListener("click", async () => {
+    const msgEl = document.getElementById("embedMsg");
+    const k = String(window.__reaiEmbedKey || "");
+    if (!k) {
+      if (msgEl) msgEl.textContent = "Key not ready yet.";
+      return;
+    }
+    try {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(k);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = k;
+        ta.style.position = "fixed";
+        ta.style.left = "-1000px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      if (msgEl) msgEl.textContent = "Key copied.";
+    } catch (e) {
+      if (msgEl) msgEl.textContent = "Copy failed.";
     }
   });
   loadEmbedKey();

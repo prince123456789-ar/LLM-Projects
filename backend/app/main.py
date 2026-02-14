@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.core.database import Base, engine
 from app.core.middleware import RequestIDMiddleware, SecurityHeadersMiddleware
 from app.core.rate_limit import limiter
-from app.models import appointment, audit, billing, embed_key, integration, lead, property, report, user  # noqa: F401
+from app.models import appointment, audit, billing, embed_chat, embed_key, integration, lead, property, report, user  # noqa: F401
 
 settings = get_settings()
 
@@ -133,8 +133,7 @@ def ui_terms():
 
 @app.get("/embed.js", include_in_schema=False)
 def ui_embed_js(key: str = ""):
-    # Minimal website widget: loads from a single script tag and POSTs to /api/v1/embed/leads.
-    # Key is passed via query string to keep integration copy/paste simple.
+    # Website chat widget: a tiny embedded chat UI that talks to our server-side agent team.
     js = f"""(function() {{
   'use strict';
   var script = document.currentScript;
@@ -146,24 +145,24 @@ def ui_embed_js(key: str = ""):
   try {{
     if (u && u.searchParams) key = u.searchParams.get('key') || '';
   }} catch (e) {{}}
-  if (!key) {{
-    // No key: don't do anything.
-    return;
-  }}
+  if (!key || !backendOrigin) return;
 
   function cssText() {{
     return [
-      '.reai-btn{{position:fixed;right:18px;bottom:18px;z-index:2147483647;background:linear-gradient(135deg,#55f2c2,#74a8ff);color:#041016;border:0;border-radius:999px;padding:12px 14px;font:600 14px/1.1 ui-sans-serif,system-ui;box-shadow:0 12px 30px rgba(0,0,0,.35);cursor:pointer}}',
-      '.reai-modal{{position:fixed;inset:0;z-index:2147483647;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}}',
-      '.reai-card{{width:min(520px,92vw);border-radius:18px;padding:18px;background:rgba(10,14,22,.92);color:#eaf0ff;border:1px solid rgba(255,255,255,.12);box-shadow:0 18px 60px rgba(0,0,0,.45)}}',
-      '.reai-row{{display:flex;gap:10px;flex-wrap:wrap}}',
-      '.reai-card h3{{margin:0 0 10px 0;font:700 18px/1.2 ui-sans-serif,system-ui}}',
-      '.reai-card p{{margin:0 0 14px 0;opacity:.8;font:400 13px/1.4 ui-sans-serif,system-ui}}',
-      '.reai-in{{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#eaf0ff;outline:none}}',
-      '.reai-actions{{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:12px}}',
-      '.reai-x{{background:transparent;border:1px solid rgba(255,255,255,.16);color:#eaf0ff;border-radius:12px;padding:9px 12px;cursor:pointer}}',
-      '.reai-send{{background:linear-gradient(135deg,#55f2c2,#74a8ff);border:0;color:#041016;border-radius:12px;padding:9px 12px;cursor:pointer;font-weight:700}}',
-      '.reai-msg{{margin-top:10px;opacity:.85;font:500 12px/1.2 ui-sans-serif,system-ui}}'
+      '.reai-fab{{position:fixed;right:18px;bottom:18px;z-index:2147483647;background:linear-gradient(135deg,#3b82f6,#2dd4bf);color:#081018;border:0;border-radius:999px;padding:12px 14px;font:800 14px/1.1 ui-sans-serif,system-ui;box-shadow:0 18px 55px rgba(59,130,246,.22);cursor:pointer}}',
+      '.reai-panel{{position:fixed;right:18px;bottom:78px;z-index:2147483647;width:min(420px,92vw);height:min(560px,78vh);display:none;flex-direction:column;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.12);background:rgba(8,10,16,.88);backdrop-filter: blur(14px);box-shadow:0 24px 70px rgba(0,0,0,.55)}}',
+      '.reai-head{{padding:14px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03)}}',
+      '.reai-title{{display:flex;flex-direction:column;gap:2px}}',
+      '.reai-title b{{font:800 14px/1.1 ui-sans-serif,system-ui;color:#eaf0ff;letter-spacing:.2px}}',
+      '.reai-title span{{font:600 11px/1 ui-sans-serif,system-ui;color:rgba(234,240,255,.65)}}',
+      '.reai-x{{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#eaf0ff;border-radius:999px;padding:7px 10px;font:700 12px/1 ui-sans-serif,system-ui;cursor:pointer}}',
+      '.reai-body{{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}}',
+      '.reai-msg{{max-width:88%;padding:10px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.10);font:600 13px/1.35 ui-sans-serif,system-ui;white-space:pre-wrap;overflow-wrap:anywhere}}',
+      '.reai-u{{align-self:flex-end;background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.22);color:#dbeafe}}',
+      '.reai-a{{align-self:flex-start;background:rgba(45,212,191,.10);border-color:rgba(45,212,191,.20);color:#ccfbf1}}',
+      '.reai-foot{{padding:12px;border-top:1px solid rgba(255,255,255,.10);display:flex;gap:10px}}',
+      '.reai-in{{flex:1;padding:10px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20);color:#eaf0ff;outline:none;font:600 13px/1.2 ui-sans-serif,system-ui}}',
+      '.reai-send{{padding:10px 12px;border-radius:16px;border:0;background:linear-gradient(135deg,#3b82f6,#2dd4bf);color:#081018;font:900 13px/1 ui-sans-serif,system-ui;cursor:pointer}}'
     ].join('');
   }}
 
@@ -172,80 +171,89 @@ def ui_embed_js(key: str = ""):
     if (attrs) {{
       Object.keys(attrs).forEach(function(k) {{
         if (k === 'text') n.textContent = attrs[k];
-        else if (k === 'html') n.innerHTML = attrs[k];
         else n.setAttribute(k, attrs[k]);
       }});
     }}
     return n;
   }}
 
+  function appendMsg(box, cls, text) {{
+    var m = el('div', {{ class: 'reai-msg ' + cls }});
+    m.textContent = text;
+    box.appendChild(m);
+    box.scrollTop = box.scrollHeight;
+  }}
+
   var style = el('style'); style.textContent = cssText(); document.head.appendChild(style);
-
-  var btn = el('button', {{ class:'reai-btn', type:'button', text:'Contact Agent' }});
-  var modal = el('div', {{ class:'reai-modal' }});
-  var card = el('div', {{ class:'reai-card' }});
-  modal.appendChild(card);
-
-  card.appendChild(el('h3', {{ text:'Request a viewing' }}));
-  card.appendChild(el('p', {{ text:'Leave your details and we will respond quickly.' }}));
-  var name = el('input', {{ class:'reai-in', placeholder:'Full name', autocomplete:'name' }});
-  var email = el('input', {{ class:'reai-in', placeholder:'Email (optional)', autocomplete:'email' }});
-  var phone = el('input', {{ class:'reai-in', placeholder:'Phone (optional)', autocomplete:'tel' }});
-  var msg = el('textarea', {{ class:'reai-in', placeholder:'Message (optional)', rows:'4' }});
-  card.appendChild(name);
-  card.appendChild(el('div', {{ style:'height:8px' }}));
-  card.appendChild(email);
-  card.appendChild(el('div', {{ style:'height:8px' }}));
-  card.appendChild(phone);
-  card.appendChild(el('div', {{ style:'height:8px' }}));
-  card.appendChild(msg);
-  var actions = el('div', {{ class:'reai-actions' }});
+  var fab = el('button', {{ class:'reai-fab', type:'button', text:'Chat' }});
+  var panel = el('div', {{ class:'reai-panel' }});
+  var head = el('div', {{ class:'reai-head' }});
+  var title = el('div', {{ class:'reai-title' }});
+  title.appendChild(el('b', {{ text:'RealEstateAI Agent Team' }}));
+  title.appendChild(el('span', {{ text:'Lead capture + qualification in real time' }}));
   var close = el('button', {{ class:'reai-x', type:'button', text:'Close' }});
+  head.appendChild(title); head.appendChild(close);
+  var body = el('div', {{ class:'reai-body' }});
+  var foot = el('div', {{ class:'reai-foot' }});
+  var input = el('input', {{ class:'reai-in', placeholder:'Type your message...' }});
   var send = el('button', {{ class:'reai-send', type:'button', text:'Send' }});
-  actions.appendChild(close);
-  actions.appendChild(send);
-  card.appendChild(actions);
-  var status = el('div', {{ class:'reai-msg', text:'' }});
-  card.appendChild(status);
+  foot.appendChild(input); foot.appendChild(send);
+  panel.appendChild(head); panel.appendChild(body); panel.appendChild(foot);
 
-  function open() {{ modal.style.display='flex'; status.textContent=''; }}
-  function hide() {{ modal.style.display='none'; }}
-
-  btn.addEventListener('click', open);
+  function open() {{ panel.style.display='flex'; input.focus(); }}
+  function hide() {{ panel.style.display='none'; }}
+  fab.addEventListener('click', open);
   close.addEventListener('click', hide);
-  modal.addEventListener('click', function(e) {{ if (e.target === modal) hide(); }});
 
-  send.addEventListener('click', function() {{
-    status.textContent = 'Sending...';
+  var convKey = 'reai_conv_' + key.slice(0, 16);
+  function getConv() {{ try {{ return localStorage.getItem(convKey) || ''; }} catch(e) {{ return ''; }} }}
+  function setConv(v) {{ try {{ localStorage.setItem(convKey, v); }} catch(e) {{}} }}
+
+  var booted = false;
+  function boot() {{
+    if (booted) return;
+    booted = true;
+    appendMsg(body, 'reai-a', 'Hi. Tell me the location, budget, and property type you are looking for.');
+  }}
+  fab.addEventListener('click', boot);
+
+  function sendMsg() {{
+    var t = (input.value || '').trim();
+    if (!t) return;
+    input.value = '';
+    appendMsg(body, 'reai-u', t);
     var payload = {{
-      full_name: (name.value || '').trim(),
-      email: (email.value || '').trim() || null,
-      phone: (phone.value || '').trim() || null,
-      message: (msg.value || '').trim() || null,
+      conversation_id: getConv() || null,
+      message: t,
       page_url: (location && location.href) ? String(location.href) : null,
       referrer: (document && document.referrer) ? String(document.referrer) : null
     }};
-    if (!payload.full_name) {{
-      status.textContent = 'Name is required.';
-      return;
-    }}
-    fetch(backendOrigin + '/api/v1/embed/leads?key=' + encodeURIComponent(key), {{
-      method: 'POST',
+    fetch(backendOrigin + '/api/v1/embed/chat/message?key=' + encodeURIComponent(key), {{
+      method:'POST',
       headers: {{ 'Content-Type':'application/json' }},
       body: JSON.stringify(payload)
     }}).then(function(r) {{
-      return r.json().catch(function() {{ return {{}}; }}).then(function(j) {{ return {{ ok:r.ok, json:j }}; }});
+      return r.json().catch(function(){{return {{}};}}).then(function(j){{ return {{ ok:r.ok, json:j }}; }});
     }}).then(function(res) {{
       if (!res.ok) throw new Error((res.json && res.json.detail) ? res.json.detail : 'Failed');
-      status.textContent = 'Sent. We will contact you shortly.';
-      setTimeout(hide, 900);
+      if (res.json && res.json.conversation_id) setConv(String(res.json.conversation_id));
+      appendMsg(body, 'reai-a', String(res.json.reply || 'Okay.'));
+      if (res.json && res.json.recommendations && res.json.recommendations.length) {{
+        var list = res.json.recommendations.map(function(p) {{
+          return '- ' + p.title + ' | ' + p.location + ' | $' + p.price;
+        }}).join('\\n');
+        appendMsg(body, 'reai-a', 'Suggested listings:\\n' + list);
+      }}
     }}).catch(function(err) {{
-      status.textContent = (err && err.message) ? err.message : 'Failed to send.';
+      appendMsg(body, 'reai-a', (err && err.message) ? err.message : 'Request failed.');
     }});
-  }});
+  }}
 
-  document.body.appendChild(btn);
-  document.body.appendChild(modal);
+  send.addEventListener('click', sendMsg);
+  input.addEventListener('keydown', function(e) {{ if (e.key === 'Enter') sendMsg(); }});
+
+  document.body.appendChild(fab);
+  document.body.appendChild(panel);
 }})();"""
     return Response(content=js, media_type="application/javascript; charset=utf-8")
 
