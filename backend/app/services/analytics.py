@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_
+from sqlalchemy import case
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -75,35 +75,35 @@ def get_timeseries(db: Session, days: int = 30) -> list[TimeSeriesPoint]:
     for plan, cnt in active_subs:
         mrr += plan_price.get(plan, 0) * int(cnt or 0)
 
+    # Fast path: aggregate in a single query instead of 3 queries per day.
+    day_col = func.date(Lead.created_at)
+    rows = (
+        db.query(
+            day_col.label("day"),
+            func.count(Lead.id).label("created"),
+            func.sum(case((Lead.status == LeadStatus.converted, 1), else_=0)).label("converted"),
+            func.sum(case((Lead.status == LeadStatus.lost, 1), else_=0)).label("lost"),
+        )
+        .filter(Lead.created_at >= start)
+        .group_by(day_col)
+        .all()
+    )
+
+    by_day: dict[str, tuple[int, int, int]] = {}
+    for d, created, converted, lost in rows:
+        key = str(d)
+        by_day[key] = (int(created or 0), int(converted or 0), int(lost or 0))
+
     points: list[TimeSeriesPoint] = []
     for i in range(days):
         day_start = start + timedelta(days=i)
-        day_end = day_start + timedelta(days=1)
-
-        created = (
-            db.query(func.count(Lead.id))
-            .filter(and_(Lead.created_at >= day_start, Lead.created_at < day_end))
-            .scalar()
-            or 0
-        )
-        converted = (
-            db.query(func.count(Lead.id))
-            .filter(and_(Lead.created_at >= day_start, Lead.created_at < day_end, Lead.status == LeadStatus.converted))
-            .scalar()
-            or 0
-        )
-        lost = (
-            db.query(func.count(Lead.id))
-            .filter(and_(Lead.created_at >= day_start, Lead.created_at < day_end, Lead.status == LeadStatus.lost))
-            .scalar()
-            or 0
-        )
-
+        key = day_start.date().isoformat()
+        created, converted, lost = by_day.get(key, (0, 0, 0))
         losses = int(lost * 10)
         profit = max(0, int(mrr - losses))
         points.append(
             TimeSeriesPoint(
-                day=day_start.date().isoformat(),
+                day=key,
                 mrr_usd=int(mrr),
                 profit_usd=int(profit),
                 losses_usd=int(losses),
