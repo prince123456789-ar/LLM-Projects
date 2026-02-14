@@ -67,6 +67,12 @@ function onLoginPage() {
   const logoutBtn = document.getElementById("logoutBtn");
   if (!form) return;
 
+  // If there's no session, don't show logout.
+  try {
+    const hasSession = !!(localStorage.getItem("token") || localStorage.getItem("refresh_token"));
+    if (logoutBtn) logoutBtn.style.display = hasSession ? "inline-flex" : "none";
+  } catch (_) {}
+
   // OAuth callback token handoff (URL fragment, never sent to server).
   try {
     if (window.location.hash && window.location.hash.includes("access_token=")) {
@@ -106,6 +112,7 @@ function onLoginPage() {
       localStorage.removeItem("token");
       localStorage.removeItem("refresh_token");
       msg.textContent = "Logged out.";
+      logoutBtn.style.display = "none";
     });
   }
 }
