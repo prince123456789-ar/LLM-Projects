@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse
@@ -8,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi import _rate_limit_exceeded_handler
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.api import api_router
 from app.core.config import get_settings
@@ -63,6 +65,44 @@ def _page(name: str) -> FileResponse:
 @app.get("/", include_in_schema=False)
 def ui_home():
     return _page("index.html")
+
+@app.get("/api", include_in_schema=False)
+def api_root():
+    return {
+        "name": settings.PROJECT_NAME,
+        "version": "v1",
+        "base": settings.API_V1_STR,
+        "health": "/health",
+    }
+
+
+@app.get(settings.API_V1_STR, include_in_schema=False)
+def api_v1_root():
+    return {
+        "base": settings.API_V1_STR,
+        "endpoints": [
+            "/auth/login",
+            "/auth/register",
+            "/auth/refresh",
+            "/leads",
+            "/analytics/dashboard",
+            "/analytics/timeseries",
+        ],
+    }
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    # Avoid showing JSON {"detail":"Not Found"} in browsers for UI routes.
+    if exc.status_code == 404:
+        accept = (request.headers.get("accept") or "").lower()
+        if "text/html" in accept:
+            return _page("404.html")
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Not Found", "path": str(request.url.path)},
+        )
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.get("/pricing", include_in_schema=False)
