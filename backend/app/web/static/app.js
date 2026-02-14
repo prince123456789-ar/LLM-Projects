@@ -174,7 +174,7 @@ function onLeadsPage() {
           full_name: document.getElementById("lName").value,
           email: document.getElementById("lEmail").value || null,
           phone: document.getElementById("lPhone").value || null,
-          channel: document.getElementById("lChannel").value || "website",
+          channel: document.getElementById("lChannel").value || "website_chat",
           location: document.getElementById("lLocation").value || null,
           property_type: document.getElementById("lPropertyType").value || null,
           budget: document.getElementById("lBudget").value ? Number(document.getElementById("lBudget").value) : null,
@@ -185,7 +185,10 @@ function onLeadsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error("Failed to create lead");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || "Failed to create lead");
+        }
         msg.textContent = "Created lead.";
         await refreshNow();
       } catch (err) {

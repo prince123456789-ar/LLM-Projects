@@ -9,7 +9,13 @@ class LeadCreate(BaseModel):
     email: EmailStr | None = None
     phone: str | None = None
     channel: LeadChannel
-    raw_message: str
+    raw_message: str = ""
+
+    # Optional structured fields (UI-friendly). AI can still re-extract from raw_message.
+    property_type: str | None = None
+    location: str | None = None
+    budget: float | None = None
+    timeline: str | None = None
 
 
 class LeadUpdate(BaseModel):

@@ -12,6 +12,8 @@ class LeadChannel(str, enum.Enum):
     instagram = "instagram"
     facebook = "facebook"
     website_chat = "website_chat"
+    # Backwards-compatible alias used by the UI.
+    website = "website"
     email = "email"
 
 

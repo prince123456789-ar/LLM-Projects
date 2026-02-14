@@ -18,7 +18,24 @@ router = APIRouter(prefix="/leads", tags=["leads"])
 
 @router.post("", response_model=LeadResponse)
 def create_lead(payload: LeadCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    extraction = extract_entities(payload.raw_message)
+    # Normalize channel alias.
+    if payload.channel == "website":  # type: ignore[comparison-overlap]
+        payload.channel = "website_chat"  # type: ignore[assignment]
+
+    raw = (payload.raw_message or "").strip()
+    if not raw:
+        parts = []
+        if payload.property_type:
+            parts.append(f"Property type: {payload.property_type}")
+        if payload.location:
+            parts.append(f"Location: {payload.location}")
+        if payload.budget is not None:
+            parts.append(f"Budget: {payload.budget}")
+        if payload.timeline:
+            parts.append(f"Timeline: {payload.timeline}")
+        raw = " | ".join(parts) if parts else "New lead"
+
+    extraction = extract_entities(raw)
     score = score_lead(extraction.intent, extraction.budget, extraction.timeline)
 
     existing = None
@@ -31,12 +48,12 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db), current_user
         existing = db.query(Lead).filter(or_(*conditions)).order_by(Lead.created_at.desc()).first()
 
     if existing:
-        existing.raw_message = f"{existing.raw_message}\n---\n{payload.raw_message}".strip()
+        existing.raw_message = f"{existing.raw_message}\n---\n{raw}".strip()
         existing.score = max(existing.score, score)
-        existing.property_type = extraction.property_type or existing.property_type
-        existing.location = extraction.location or existing.location
-        existing.budget = extraction.budget or existing.budget
-        existing.timeline = extraction.timeline or existing.timeline
+        existing.property_type = payload.property_type or extraction.property_type or existing.property_type
+        existing.location = payload.location or extraction.location or existing.location
+        existing.budget = payload.budget or extraction.budget or existing.budget
+        existing.timeline = payload.timeline or extraction.timeline or existing.timeline
         db.commit()
         db.refresh(existing)
         audit_event(db, "lead_merge", "lead", user_id=current_user.id, details=f"lead_id={existing.id}")
@@ -47,12 +64,12 @@ def create_lead(payload: LeadCreate, db: Session = Depends(get_db), current_user
         email=payload.email,
         phone=payload.phone,
         channel=payload.channel,
-        raw_message=payload.raw_message,
+        raw_message=raw,
         score=score,
-        property_type=extraction.property_type,
-        location=extraction.location,
-        budget=extraction.budget,
-        timeline=extraction.timeline,
+        property_type=payload.property_type or extraction.property_type,
+        location=payload.location or extraction.location,
+        budget=payload.budget or extraction.budget,
+        timeline=payload.timeline or extraction.timeline,
     )
     db.add(lead)
     db.flush()
