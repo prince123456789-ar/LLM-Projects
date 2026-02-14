@@ -41,16 +41,9 @@ app.add_middleware(
     # broader cross-origin use for the website embed SDK.
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=[
-        "Authorization",
-        "Content-Type",
-        "x-device-id",
-        "x-request-id",
-        "x-webhook-timestamp",
-        "x-webhook-signature",
-        "x-api-key",
-        "x-embed-key",
-    ],
+    # Allow arbitrary headers so browser-based embed flows (including ngrok dev workarounds)
+    # can send custom headers without triggering CORS 400s.
+    allow_headers=["*"],
 )
 
 
